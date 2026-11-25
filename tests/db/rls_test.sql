@@ -507,6 +507,48 @@ select uji.cek('I16 perangkat desa tidak bisa mengubah identitas pasien',
   uji.sebagai('desa', format('update public.patients set phone = %L where id = %L', '0', uji.id('P2'))), 'ok:0');
 
 -- =============================================================================
+-- J. Alur Fase 3 (Pos Kaki, Ojek Sehat, Jimpitan, Pemberdayaan)
+-- =============================================================================
+insert into uji.data values
+  ('RD2', '50000000-0000-0000-0000-000000000002'),
+  ('AT1', '50000000-0000-0000-0000-000000000003');
+select uji.cek('J1 kader mencatat Ny. S di daftar hadir Pos Kaki',
+  uji.sebagai('kader', format($q$insert into public.attendance (id, agenda_id, patient_id) values (%L, %L, %L)$q$, uji.id('AT1'), uji.id('AG1'), uji.id('P1'))), 'ok:1');
+select uji.cek('J2 kader menandai hadir + tepat waktu + kaki diperiksa',
+  uji.sebagai('kader', format('update public.attendance set present = true, on_time = true, foot_check_done = true where id = %L', uji.id('AT1'))), 'ok:1');
+select uji.cek('J3 perangkat desa tidak bisa mengubah daftar hadir',
+  uji.sebagai('desa', format('update public.attendance set present = false where id = %L', uji.id('AT1'))), 'ok:0');
+select uji.cek('J4 perangkat desa melihat status kehadiran',
+  uji.nilai('desa', format('select present::text from public.attendance where id = %L', uji.id('AT1'))), 'true');
+select uji.cek('J5 kader memesan Ojek Sehat kedua',
+  uji.sebagai('kader', format($q$insert into public.rides (id, patient_id, driver_id, pickup_from, destination, scheduled_at, estimated_cost)
+    values (%L, %L, %L, 'Rumah', 'puskesmas', now(), 20000)$q$, uji.id('RD2'), uji.id('P2'), uji.id('DR1'))), 'ok:1');
+select uji.cek('J6 kader menandai pemesanan selesai',
+  uji.sebagai('kader', format('update public.rides set status = %L where id = %L', 'selesai', uji.id('RD2'))), 'ok:1');
+select uji.cek('J7 perangkat desa tidak bisa mengubah status pemesanan',
+  uji.sebagai('desa', format('update public.rides set status = %L where id = %L', 'batal', uji.id('RD2'))), 'ok:0');
+select uji.cek('J8 GERBANG: biaya ride dicatat ke Jimpitan oleh kader',
+  uji.sebagai('kader', format($q$insert into public.funds (trx_type, category, amount, description, ride_id)
+    values ('keluar', 'Ojek Sehat', 20000, 'Ojek Sehat ke Puskesmas', %L)$q$, uji.id('RD2'))), 'ok:1');
+select uji.cek('J9 GERBANG: saldo = 100.000 - 15.000 - 20.000 = 65.000',
+  uji.nilai('desa', $q$select public.dashboard_stats() ->> 'saldo_jimpitan'$q$), '65000');
+select uji.cek('J10 pasien hanya melihat pemesanan miliknya',
+  uji.nilai('pasien', 'select count(*) from public.rides'), '0');
+select uji.cek('J11 kader mencatat pelatihan kader',
+  uji.sebagai('kader', format($q$insert into public.kader_trainings (training_date, title, topics, participant_ids, participant_names)
+    values (current_date, 'Pelatihan KKS', '{pengisian_kks}', array[%L]::uuid[], '{"Bu Sri (PKK)"}')$q$, uji.id('kader'))), 'ok:1');
+select uji.cek('J12 akun yang belum disetujui tidak melihat pelatihan',
+  uji.nilai('baru', 'select count(*) from public.kader_trainings'), '0');
+select uji.cek('J13 perangkat desa mencatat rapat Siaga Kaki',
+  uji.sebagai('desa', $q$insert into public.coordination_meetings (meeting_date, minutes) values (current_date, 'Bahas Ojek Sehat')$q$), 'ok:1');
+select uji.cek('J14 pasien tidak bisa mencatat rapat',
+  uji.sebagai('pasien2', $q$insert into public.coordination_meetings (meeting_date) values (current_date)$q$), 'error:%');
+select uji.cek('J15 perangkat desa menambah sumber daya desa (kebijakan)',
+  uji.sebagai('desa', $q$insert into public.community_resources (resource_type, name, document_url) values ('kebijakan', 'SK Kepala Desa Siaga Kaki', 'https://contoh.id/sk.pdf')$q$), 'ok:1');
+select uji.cek('J16 kader bisa menghapus agenda (Edit di matriks)',
+  uji.sebagai('kader', format('delete from public.agenda where id = %L', uji.id('AG1'))), 'ok:1');
+
+-- =============================================================================
 -- Hasil
 -- =============================================================================
 \echo

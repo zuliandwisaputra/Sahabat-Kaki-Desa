@@ -25,7 +25,7 @@ const TABS = [
 
 const KOSONG = { title: '', body: '', category: 'pengumuman', pinned: false }
 
-function ArtikelForm({ open, onClose, awal, onSaved }) {
+function ArtikelForm({ open, onClose, awal, onSaved, kategoriBaru = 'pengumuman' }) {
   const toast = useToast()
   const [form, setForm] = useState(KOSONG)
   const [errors, setErrors] = useState({})
@@ -33,10 +33,10 @@ function ArtikelForm({ open, onClose, awal, onSaved }) {
 
   useEffect(() => {
     if (open) {
-      setForm(awal ? { title: awal.title, body: awal.body, category: awal.category, pinned: awal.pinned } : KOSONG)
+      setForm(awal ? { title: awal.title, body: awal.body, category: awal.category, pinned: awal.pinned } : { ...KOSONG, category: kategoriBaru })
       setErrors({})
     }
-  }, [open, awal])
+  }, [open, awal, kategoriBaru])
 
   async function onSubmit(e) {
     e.preventDefault()
@@ -155,10 +155,11 @@ function ArtikelItem({ a, bolehUbah, onEdit, onDelete }) {
 }
 
 /** HOME-03 & HOME-04: pengumuman desa dan artikel edukasi kesehatan kaki */
-export function ArtikelSection() {
+export function ArtikelSection({ hanyaTab, judul = 'Info & edukasi', kategoriBaru = 'pengumuman' } = {}) {
   const toast = useToast()
   const bolehUbah = useCan('beranda.artikel')
-  const [tab, setTab] = useState('pengumuman')
+  const tabs = hanyaTab ? TABS.filter((t) => hanyaTab.includes(t.key)) : TABS
+  const [tab, setTab] = useState(tabs[0].key)
   const [items, setItems] = useState(null)
   const [form, setForm] = useState({ open: false, awal: null })
   const [hapus, setHapus] = useState(null)
@@ -189,14 +190,14 @@ export function ArtikelSection() {
     muat()
   }
 
-  const aktif = TABS.find((t) => t.key === tab)
+  const aktif = tabs.find((t) => t.key === tab) ?? tabs[0]
   const daftar = (items ?? []).filter((a) => aktif.kategori.includes(a.category))
 
   return (
     <section aria-labelledby="info-desa">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h2 id="info-desa" className="text-xl font-extrabold">
-          Info & edukasi
+          {judul}
         </h2>
         <Can do="beranda.artikel">
           <Button size="sm" icon={Plus} onClick={() => setForm({ open: true, awal: null })}>
@@ -205,8 +206,8 @@ export function ArtikelSection() {
         </Can>
       </div>
 
-      <div role="tablist" aria-label="Jenis tulisan" className="mb-4 flex flex-wrap gap-2">
-        {TABS.map((t) => (
+      <div role="tablist" aria-label="Jenis tulisan" className={`mb-4 flex flex-wrap gap-2 ${tabs.length < 2 ? 'hidden' : ''}`}>
+        {tabs.map((t) => (
           <button
             key={t.key}
             type="button"
@@ -245,9 +246,10 @@ export function ArtikelSection() {
       <ArtikelForm
         open={form.open}
         awal={form.awal}
+        kategoriBaru={kategoriBaru}
         onClose={() => setForm({ open: false, awal: null })}
         onSaved={(kategori) => {
-          setTab(TABS.find((t) => t.kategori.includes(kategori))?.key ?? tab)
+          setTab(tabs.find((t) => t.kategori.includes(kategori))?.key ?? tab)
           muat()
         }}
       />

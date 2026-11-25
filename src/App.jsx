@@ -26,6 +26,10 @@ const SahabatKaki = lazy(() => import('./pages/sahabat-kaki/SahabatKaki'))
 const DaftarKartu = lazy(() => import('./pages/kartu-kaki/DaftarKartu'))
 const FormKartu = lazy(() => import('./pages/kartu-kaki/FormKartu'))
 const DetailKartu = lazy(() => import('./pages/kartu-kaki/DetailKartu'))
+const Jimpitan = lazy(() => import('./pages/jimpitan/Jimpitan'))
+const PosKaki = lazy(() => import('./pages/pos-kaki/PosKaki'))
+const AgendaDetail = lazy(() => import('./pages/pos-kaki/AgendaDetail'))
+const Pemberdayaan = lazy(() => import('./pages/pemberdayaan/Pemberdayaan'))
 const NotFound = lazy(() => import('./pages/umum/NotFound'))
 
 function Root() {
@@ -113,9 +117,16 @@ const router = createBrowserRouter([
               { path: ':id/ubah', handle: { title: 'Ubah catatan kartu' }, element: <FormKartu key="ubah" /> },
             ],
           },
-          modul('jimpitan', 'Jimpitan Sehat'),
-          modul('pos-kaki', 'Pos Kaki & Ojek Sehat'),
-          modul('pemberdayaan', 'Pemberdayaan Desa'),
+          { path: 'jimpitan', handle: { title: 'Jimpitan Sehat', menu: 'jimpitan' }, element: <Jimpitan /> },
+          {
+            path: 'pos-kaki',
+            handle: { title: 'Pos Kaki & Ojek Sehat', menu: 'pos-kaki' },
+            children: [
+              { index: true, element: <PosKaki /> },
+              { path: 'agenda/:id', handle: { title: 'Agenda Pos Kaki' }, element: <AgendaDetail /> },
+            ],
+          },
+          { path: 'pemberdayaan', handle: { title: 'Pemberdayaan Desa', menu: 'pemberdayaan' }, element: <Pemberdayaan /> },
           modul('kuesioner', 'Kuesioner'),
           modul('evaluasi', 'Evaluasi'),
           modul('kelola-data', 'Kelola Data'),
