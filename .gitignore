@@ -1,0 +1,14 @@
+# Dependensi & hasil build
+node_modules/
+dist/
+
+# Kunci & rahasia — JANGAN di-commit
+.env
+.env.local
+.env.*.local
+
+# Lain-lain
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
