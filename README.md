@@ -42,6 +42,29 @@ selesai sebelum mengetik perintah berikutnya.
    git checkout claude/dazzling-wright-11fnuf
    ```
 
+### A2. Alternatif: memakai Laragon
+
+Laragon bisa dipakai sebagai pengganti langkah 1–2 di atas, karena Laragon Full sudah
+membawa Node.js dan Git. Database **tetap di Supabase** (online); Apache dan MySQL milik
+Laragon tidak dipakai, jadi tidak perlu menekan "Start All".
+
+1. Pasang **Laragon Full** dari <https://laragon.org/download>, lalu buka.
+2. Klik kanan di jendela Laragon → **Node.js** → pilih versi **24** atau yang terbaru
+   (minimal 22.22). Kalau belum ada, tambahkan lewat **Tools → Quick add**.
+3. Klik tombol **Terminal** di Laragon, lalu ketik satu per satu:
+   ```
+   cd C:\laragon\www
+   git clone https://github.com/zuliandwisaputra/Sahabat-Kaki-Desa.git
+   cd Sahabat-Kaki-Desa
+   git checkout claude/dazzling-wright-11fnuf
+   ```
+4. Lanjutkan ke bagian B dan C. Bedanya, di terminal Laragon pakai `copy` (bukan
+   `Copy-Item`):
+   ```
+   copy .env.example .env
+   ```
+   Website dibuka di **http://localhost:5173**, bukan alamat `.test` dari Laragon.
+
 ## B. Menyiapkan Supabase (database + login)
 
 1. Buka <https://supabase.com>, daftar atau masuk, lalu klik **New project**.
@@ -69,8 +92,10 @@ selesai sebelum mengetik perintah berikutnya.
 
    > Kalau satu file gagal, **jangan lanjut ke file berikutnya**. Salin pesan error-nya dan
    > tanyakan dulu.
-3. **Matikan konfirmasi email.** Buka **Authentication → Sign In / Providers → Email**,
-   matikan **Confirm email**, lalu klik Save.
+3. **Matikan konfirmasi email SEBELUM mendaftarkan akun apa pun.** Buka
+   **Authentication → Sign In / Providers → Email**, matikan **Confirm email**, lalu klik
+   Save. Akun yang terdaftar sebelum ini dimatikan tetap dianggap belum terkonfirmasi dan
+   tidak bisa masuk.
 
    Ini perlu karena layanan email gratis Supabase hanya bisa mengirim ke email anggota tim
    proyek Supabase, dan hanya beberapa email per jam. Kalau konfirmasi tidak dimatikan,
@@ -79,8 +104,10 @@ selesai sebelum mengetik perintah berikutnya.
    - Site URL: `http://localhost:5173`
    - Redirect URLs: tambahkan `http://localhost:5173/**`
 5. **Salin kunci.** Buka **Project Settings → API Keys** (atau tombol **Connect**), lalu salin:
-   - **Project URL**, contohnya `https://abcdxyz.supabase.co`
-   - **Publishable key** (atau **anon public key**)
+   - **Project URL**, contohnya `https://abcdxyz.supabase.co`. Bagian `abcdxyz` sama dengan
+     kode proyek yang tampil di alamat browser: `supabase.com/dashboard/project/abcdxyz`.
+   - **Publishable key** yang diawali `sb_publishable_`. Jika hanya ada **anon key**
+     (cara lama), anon key juga bisa dipakai.
 
    ⚠️ **Jangan** salin *service_role* / *secret key* ke file `.env`.
 
