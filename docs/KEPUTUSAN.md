@@ -62,3 +62,17 @@ ambigu di PRD, disetujui pemilik proyek pada 25 November 2026.
     - Kode warna Kartu Kaki Sehat SELALU memakai ikon + tulisan + bingkai (tidak hanya
       warna): hijau `#166534/#DCFCE7`, kuning `#854D0E/#FEF9C3`, merah `#991B1B/#FEE2E2`.
     - Navigasi: bawah (5 tombol) di HP, sidebar di layar ≥ 1024 px.
+
+## Penilaian luka & kuesioner (revisi setelah Fase 3)
+
+14. Kode warna Kartu Kaki Sehat ditentukan dari **skor BWAT** (Bates-Jensen Wound
+    Assessment Tool, 13 butir × 1–5 poin = 13–65) yang diisi perawat:
+    - **13–20 Hijau** — risiko rendah: luka ringan/membaik, lanjut perawatan & kontrol.
+    - **21–40 Kuning** — risiko sedang: perlu arahan perawat dan jadwal pemeriksaan.
+    - **41–65 Merah** — risiko tinggi: luka berat, segera ke tenaga kesehatan/rujukan.
+    - Tidak ada luka terbuka → Hijau.
+    Warna terpilih otomatis dari skor. Perawat boleh **menaikkan** warna dengan alasan
+    klinis (wajib diisi), tetapi tidak boleh menurunkannya. Aturan ini dijaga juga di
+    database (migrasi `20261126000100_skor_bwat.sql`). Kartu lama tanpa skor tetap sah.
+15. Instrumen kuesioner Fase 4: WHOQOL-BREF (kualitas hidup), MSPSS (dukungan sosial),
+    SDSCA (kemandirian/manajemen diri).

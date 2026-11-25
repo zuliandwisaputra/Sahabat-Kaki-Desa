@@ -16,6 +16,7 @@ import { ConfirmDialog, Modal } from '../../components/ui/Modal'
 import { Badge, Banner, Card, CodeBadge, EmptyState, KODE_WARNA, Spinner } from '../../components/ui/misc'
 import { GambarPrivat, Info, LangkahKartu, StatusKartuBadge } from '../../components/ui/extra'
 import { PenilaianForm } from './PenilaianForm'
+import { BWAT, RISIKO } from '../../lib/bwat'
 
 function PanelKode({ penilaian }) {
   const k = penilaian ? KODE_WARNA[penilaian.color_code] : null
@@ -39,6 +40,13 @@ function PanelKode({ penilaian }) {
           {k.label} · {k.judul}
         </p>
         <p className="font-semibold">{k.arti}</p>
+        {penilaian.has_wound !== null && penilaian.has_wound !== undefined && (
+          <p className="mt-1 font-bold">
+            {penilaian.has_wound ? `Skor BWAT ${penilaian.bwat_score}` : 'Tidak ada luka terbuka'} · {RISIKO[penilaian.score_color]?.risiko}
+            {penilaian.color_code !== penilaian.score_color && ` (dinaikkan dari ${penilaian.score_color})`}
+          </p>
+        )}
+        {penilaian.override_reason && <p className="font-semibold">Alasan: {penilaian.override_reason}</p>}
       </div>
     </div>
   )
@@ -321,6 +329,22 @@ export default function DetailKartu() {
               </div>
             ))}
           </dl>
+          {a.has_wound && a.bwat_answers && (
+            <details className="mt-3 rounded-field border border-line p-3">
+              <summary className="min-h-11 cursor-pointer font-bold text-primary">Rincian skor BWAT ({a.bwat_score} poin)</summary>
+              <ul className="mt-2 space-y-1">
+                {BWAT.map((b) => (
+                  <li key={b.key} className="flex gap-2">
+                    <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary-soft font-extrabold text-primary">{a.bwat_answers[b.key]}</span>
+                    <span>
+                      <span className="block font-bold">{b.label.replace(/^\d+\.\s*/, '')}</span>
+                      <span className="block text-muted">{b.pilihan[a.bwat_answers[b.key] - 1]}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
           <dl className="mt-3 grid grid-cols-1 gap-x-6 border-t border-line pt-2 sm:grid-cols-2">
             <Info label="Arahan tindak lanjut">{a.follow_up_instruction ?? '-'}</Info>
             <Info label="Rekomendasi aktivitas">{a.activity_recommendation ?? '-'}</Info>

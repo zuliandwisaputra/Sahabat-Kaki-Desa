@@ -30,7 +30,7 @@ export async function cetakKartuKaki(pasienId) {
     supabase.from('patients').select('*').eq('id', pasienId).maybeSingle(),
     supabase
       .from('foot_visits')
-      .select('visit_date, status, reported_change, signs, observation_notes, assessments(color_code, follow_up_instruction, sbar_recommendation, activity_recommendation, next_control_date, wound_care_schedule, assessed_at, referral, referral_to)')
+      .select('visit_date, status, reported_change, signs, observation_notes, assessments(color_code, has_wound, bwat_score, score_color, override_reason, follow_up_instruction, sbar_recommendation, activity_recommendation, next_control_date, wound_care_schedule, assessed_at, referral, referral_to)')
       .eq('patient_id', pasienId)
       .neq('status', 'draft')
       .order('visit_date', { ascending: false })
@@ -67,7 +67,7 @@ export async function cetakKartuKaki(pasienId) {
     doc.setDrawColor(...BERRY)
     doc.setLineWidth(0.4)
     doc.line(M, y + 1.5, W - M, y + 1.5)
-    y += 7
+    y += 6.5
   }
   const paragraf = (teks, { size = 10.5, bold = false, warna = TINTA, indent = 0 } = {}) => {
     doc.setFont('helvetica', bold ? 'bold' : 'normal')
@@ -109,7 +109,7 @@ export async function cetakKartuKaki(pasienId) {
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(10.5)
   doc.text(
-    doc.splitTextToSize(w ? `${w.arti}  (dinilai ${formatTanggalPendek(terakhir.assessed_at)})` : 'Kartu akan diberi kode warna oleh perawat.', lebar - 10),
+    doc.splitTextToSize(w ? `${w.arti}${terakhir.has_wound ? ` Skor luka BWAT: ${terakhir.bwat_score}.` : terakhir.has_wound === false ? ' Tidak ada luka terbuka.' : ''}  (dinilai ${formatTanggalPendek(terakhir.assessed_at)})` : 'Kartu akan diberi kode warna oleh perawat.', lebar - 10),
     M + 5,
     y + 15,
   )
@@ -141,7 +141,7 @@ export async function cetakKartuKaki(pasienId) {
     startY: y,
     theme: 'plain',
     margin: { left: M, right: M },
-    styles: { fontSize: 10.5, cellPadding: 1.2, textColor: TINTA },
+    styles: { fontSize: 10.5, cellPadding: 1, textColor: TINTA },
     columnStyles: { 0: { fontStyle: 'bold', cellWidth: 48, textColor: ABU } },
     body: [
       ['Nama', p.full_name],
@@ -153,7 +153,7 @@ export async function cetakKartuKaki(pasienId) {
       ['Riwayat penyakit', [p.diabetes_since_year && `Diabetes sejak ${p.diabetes_since_year}`, p.medical_history].filter(Boolean).join('. ') || '-'],
     ],
   })
-  y = doc.lastAutoTable.finalY + 6
+  y = doc.lastAutoTable.finalY + 4.5
 
   // ---- Jadwal & arahan perawat terakhir
   judul('Jadwal & arahan perawat')
@@ -161,9 +161,10 @@ export async function cetakKartuKaki(pasienId) {
     startY: y,
     theme: 'plain',
     margin: { left: M, right: M },
-    styles: { fontSize: 10.5, cellPadding: 1.2, textColor: TINTA },
+    styles: { fontSize: 10.5, cellPadding: 1, textColor: TINTA },
     columnStyles: { 0: { fontStyle: 'bold', cellWidth: 48, textColor: ABU } },
     body: [
+      ...(terakhir?.bwat_score ? [['Skor luka (BWAT)', `${terakhir.bwat_score} dari 65 (13-20 hijau, 21-40 kuning, 41-65 merah)`]] : []),
       ['Jadwal kontrol berikutnya', terakhir?.next_control_date ? formatTanggal(terakhir.next_control_date) : '-'],
       ['Jadwal perawatan luka', terakhir?.wound_care_schedule ?? '-'],
       ['Arahan tindak lanjut', terakhir?.follow_up_instruction ?? terakhir?.sbar_recommendation ?? '-'],
@@ -171,7 +172,7 @@ export async function cetakKartuKaki(pasienId) {
       ...(terakhir?.referral ? [['Rujukan', terakhir.referral_to ?? 'Ya']] : []),
     ],
   })
-  y = doc.lastAutoTable.finalY + 6
+  y = doc.lastAutoTable.finalY + 4.5
 
   // ---- Kontak kader & Puskesmas (KKS-01)
   judul('Kontak')
@@ -179,7 +180,7 @@ export async function cetakKartuKaki(pasienId) {
     startY: y,
     theme: 'plain',
     margin: { left: M, right: M },
-    styles: { fontSize: 10.5, cellPadding: 1.2, textColor: TINTA },
+    styles: { fontSize: 10.5, cellPadding: 1, textColor: TINTA },
     columnStyles: { 0: { fontStyle: 'bold', cellWidth: 48, textColor: ABU } },
     body: [
       ['Kader pendamping', pend ? [pend.name, pend.phone].filter(Boolean).join(' - ') : '-'],
@@ -187,7 +188,7 @@ export async function cetakKartuKaki(pasienId) {
       ...(set.link_grup_wa ? [['Grup WhatsApp', set.link_grup_wa]] : []),
     ],
   })
-  y = doc.lastAutoTable.finalY + 6
+  y = doc.lastAutoTable.finalY + 4.5
 
   // ---- Riwayat pemeriksaan
   judul('Catatan pemeriksaan kaki')
@@ -204,13 +205,13 @@ export async function cetakKartuKaki(pasienId) {
           formatTanggalPendek(k.visit_date),
           PERUBAHAN[k.reported_change] ?? '-',
           (k.signs ?? []).map((s) => TANDA[s]).join(', ') || '-',
-          k.a ? WARNA[k.a.color_code].label : 'Belum',
+          k.a ? `${WARNA[k.a.color_code].label}${k.a.bwat_score ? ` (${k.a.bwat_score})` : ''}` : 'Belum',
           k.a?.follow_up_instruction ?? '-',
         ])
       : [['-', '-', '-', '-', 'Belum ada catatan pemeriksaan']],
     didParseCell: (data) => {
       if (data.section === 'body' && data.column.index === 3) {
-        const kode = Object.values(WARNA).find((x) => x.label === data.cell.raw)
+        const kode = Object.values(WARNA).find((x) => String(data.cell.raw).startsWith(x.label))
         if (kode) {
           data.cell.styles.fillColor = kode.fill
           data.cell.styles.textColor = kode.text
@@ -218,7 +219,7 @@ export async function cetakKartuKaki(pasienId) {
       }
     },
   })
-  y = doc.lastAutoTable.finalY + 6
+  y = doc.lastAutoTable.finalY + 4.5
 
   // ---- Pengingat perawatan diri
   judul('Pengingat perawatan diri')

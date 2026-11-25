@@ -549,6 +549,42 @@ select uji.cek('J16 kader bisa menghapus agenda (Edit di matriks)',
   uji.sebagai('kader', format('delete from public.agenda where id = %L', uji.id('AG1'))), 'ok:1');
 
 -- =============================================================================
+-- K. Skor luka BWAT menentukan kode warna (migrasi 8)
+-- =============================================================================
+insert into uji.data values
+  ('K10', '60000000-0000-0000-0000-000000000010'),
+  ('K11', '60000000-0000-0000-0000-000000000011'),
+  ('K12', '60000000-0000-0000-0000-000000000012');
+select uji.sebagai('kader', format($q$insert into public.foot_visits (id, patient_id, status) values (%L, %L, 'dikirim'), (%L, %L, 'dikirim'), (%L, %L, 'dikirim')$q$,
+  uji.id('K10'), uji.id('P2'), uji.id('K11'), uji.id('P2'), uji.id('K12'), uji.id('P2')));
+create function uji.bwat(n int) returns text language sql as $$
+  select jsonb_build_object('ukuran', n, 'kedalaman', n, 'tepi', n, 'goa', n, 'jenis_nekrotik', n, 'jumlah_nekrotik', n,
+    'jenis_eksudat', n, 'jumlah_eksudat', n, 'warna_kulit', n, 'edema', n, 'indurasi', n, 'granulasi', n, 'epitelisasi', n)::text;
+$$;
+select uji.cek('K1 skor 39 (13×3) tidak boleh diberi HIJAU',
+  uji.sebagai('perawat', format($q$insert into public.assessments (foot_visit_id, color_code, has_wound, bwat_answers) values (%L, 'hijau', true, %L)$q$, uji.id('K10'), uji.bwat(3))), 'error:%lebih rendah%');
+select uji.cek('K2 skor 39 diberi KUNING sesuai skor',
+  uji.sebagai('perawat', format($q$insert into public.assessments (foot_visit_id, color_code, has_wound, bwat_answers) values (%L, 'kuning', true, %L)$q$, uji.id('K10'), uji.bwat(3))), 'ok:1');
+select uji.cek('K3 skor dihitung otomatis oleh database = 39',
+  (select bwat_score::text || '/' || score_color from public.assessments where foot_visit_id = uji.id('K10')), '39/kuning');
+select uji.cek('K4 skor tidak bisa dipalsukan dari aplikasi',
+  uji.sebagai('perawat', format('update public.assessments set bwat_score = 13 where foot_visit_id = %L', uji.id('K10'))), 'ok:1');
+select uji.cek('K5 skor tetap 39 setelah percobaan dipalsukan',
+  (select bwat_score::text from public.assessments where foot_visit_id = uji.id('K10')), '39');
+select uji.cek('K6 menaikkan ke MERAH tanpa alasan ditolak',
+  uji.sebagai('perawat', format('update public.assessments set color_code = %L where foot_visit_id = %L', 'merah', uji.id('K10'))), 'error:%alasan%');
+select uji.cek('K7 menaikkan ke MERAH dengan alasan klinis diterima',
+  uji.sebagai('perawat', format('update public.assessments set color_code = %L, override_reason = %L where foot_visit_id = %L', 'merah', 'Demam & tanda infeksi sistemik', uji.id('K10'))), 'ok:1');
+select uji.cek('K8 skor 52 (13×4) otomatis MERAH',
+  uji.sebagai('perawat', format($q$insert into public.assessments (foot_visit_id, color_code, has_wound, bwat_answers) values (%L, 'merah', true, %L)$q$, uji.id('K11'), uji.bwat(4))), 'ok:1');
+select uji.cek('K9 butir BWAT tidak lengkap ditolak',
+  uji.sebagai('perawat', format($q$insert into public.assessments (foot_visit_id, color_code, has_wound, bwat_answers) values (%L, 'kuning', true, '{"ukuran":2}')$q$, uji.id('K12'))), 'error:%BWAT%');
+select uji.cek('K10 tanpa luka = HIJAU',
+  uji.sebagai('perawat', format($q$insert into public.assessments (foot_visit_id, color_code, has_wound) values (%L, 'hijau', false)$q$, uji.id('K12'))), 'ok:1');
+select uji.cek('K11 perangkat desa melihat skor di ringkasan kartu (tanpa rincian)',
+  uji.nilai('desa', format('select bwat_score::text from public.foot_card_summary where id = %L', uji.id('K11'))), '52');
+
+-- =============================================================================
 -- Hasil
 -- =============================================================================
 \echo
