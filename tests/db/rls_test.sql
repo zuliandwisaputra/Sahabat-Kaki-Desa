@@ -21,7 +21,9 @@ create function uji.sebagai(p_akun text, p_sql text) returns text language plpgs
 declare n bigint; r text;
 begin
   perform set_config('request.jwt.claim.sub', coalesce(uji.id(p_akun)::text, ''), true);
-  if p_akun is null then execute 'set local role anon'; else execute 'set local role authenticated'; end if;
+  if p_akun is null then execute 'set local role anon';
+  elsif p_akun = 'server' then execute 'set local role service_role';
+  else execute 'set local role authenticated'; end if;
   begin
     execute p_sql;
     get diagnostics n = row_count;
@@ -39,7 +41,9 @@ create function uji.nilai(p_akun text, p_sql text) returns text language plpgsql
 declare r text;
 begin
   perform set_config('request.jwt.claim.sub', coalesce(uji.id(p_akun)::text, ''), true);
-  if p_akun is null then execute 'set local role anon'; else execute 'set local role authenticated'; end if;
+  if p_akun is null then execute 'set local role anon';
+  elsif p_akun = 'server' then execute 'set local role service_role';
+  else execute 'set local role authenticated'; end if;
   begin
     execute p_sql into r;
   exception when others then
@@ -448,6 +452,15 @@ select uji.cek('H3 pengunjung tanpa login tidak punya hak di tabel mana pun',
     where grantee = 'anon' and table_schema = 'public'), '0');
 select uji.cek('H4 notifikasi masuk publikasi Realtime',
   (select count(*)::text from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'notifications'), '1');
+select uji.cek('H5 kunci server (service_role) bisa membaca tabel',
+  uji.nilai('server', 'select count(*) from public.profiles'), '9');
+select uji.cek('H6 kunci server bisa menulis tabel (untuk script akun demo)',
+  uji.sebagai('server', $q$insert into public.patients (full_name, birth_date, gender, dusun, rt)
+    values ('Tn. Server', '1950-01-01', 'L', 'Krajan', '09')$q$), 'ok:1');
+select uji.cek('H7 kunci server bisa menjalankan fungsi',
+  uji.sebagai('server', 'select public.dashboard_stats()'), 'ok:%');
+select uji.cek('H8 pengguna login tetap bisa membaca view ringkas',
+  uji.sebagai('desa', 'select * from public.patient_directory'), 'ok:%');
 
 -- =============================================================================
 -- Hasil

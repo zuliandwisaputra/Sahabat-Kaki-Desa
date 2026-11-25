@@ -9,13 +9,20 @@ begin
   if not exists (select 1 from pg_roles where rolname = 'service_role') then create role service_role nologin bypassrls; end if;
 end $$;
 
+-- Dua mode, sesuai opsi "Grant API access to new tables automatically" saat membuat
+-- proyek Supabase (dipilih lewat: psql -v hak_otomatis=true|false):
+--   true  : objek baru otomatis diberikan ke anon/authenticated/service_role
+--           -> migrasi harus MENCABUT sendiri hak yang tidak perlu
+--   false : tidak ada hak sama sekali (bahkan USAGE schema public)
+--           -> migrasi harus MEMBERI sendiri hak yang perlu
+\if :hak_otomatis
 grant usage on schema public to anon, authenticated, service_role;
-
--- Hak bawaan Supabase: objek baru di schema public otomatis diberikan ke anon &
--- authenticated. Migrasi kita harus mencabutnya sendiri — ini ikut diuji.
 alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
 alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
 alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+\else
+revoke usage on schema public from public;
+\endif
 
 -- ---- auth -------------------------------------------------------------------
 create schema auth;

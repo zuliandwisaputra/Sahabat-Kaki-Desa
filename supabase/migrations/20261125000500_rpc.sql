@@ -181,6 +181,9 @@ $$;
 -- ---------------------------------------------------------------------------
 revoke execute on all functions in schema public from public, anon, authenticated;
 
+-- Kunci server (script lokal) boleh menjalankan semua fungsi
+grant execute on all functions in schema public to service_role;
+
 -- Dipakai aturan RLS & Storage (dijalankan sebagai pengguna yang login)
 grant execute on function
   public.has_role(text[]), public.is_approved(), public.my_role(),

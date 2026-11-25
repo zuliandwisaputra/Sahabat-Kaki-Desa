@@ -15,6 +15,15 @@
 -- Lapis 1: hak dasar tabel. Mulai dari nol, lalu beri yang diperlukan saja.
 -- (Pengunjung tanpa login / "anon" tidak diberi akses ke tabel mana pun.)
 -- ---------------------------------------------------------------------------
+-- Ditulis eksplisit supaya tetap benar walaupun opsi "Grant API access to new tables
+-- automatically" di Supabase tidak dicentang saat membuat proyek.
+grant usage on schema public to anon, authenticated, service_role;
+
+-- service_role = kunci server (hanya untuk script lokal seperti create-demo-users.js,
+-- TIDAK PERNAH di frontend). Ia melewati RLS, tetapi tetap butuh hak tabel.
+grant all on all tables in schema public to service_role;
+grant all on all sequences in schema public to service_role;
+
 revoke all on all tables in schema public from anon, authenticated;
 
 grant select, insert, update, delete on
@@ -369,4 +378,4 @@ comment on view public.companion_visit_summary is
 revoke all on public.patient_directory, public.foot_card_summary, public.companion_visit_summary
   from anon, authenticated;
 grant select on public.patient_directory, public.foot_card_summary, public.companion_visit_summary
-  to authenticated;
+  to authenticated, service_role;
