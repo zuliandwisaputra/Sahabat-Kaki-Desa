@@ -30,7 +30,7 @@ export async function cetakKartuKaki(pasienId) {
     supabase.from('patients').select('*').eq('id', pasienId).maybeSingle(),
     supabase
       .from('foot_visits')
-      .select('visit_date, status, reported_change, signs, observation_notes, assessments(color_code, has_wound, bwat_score, score_color, override_reason, follow_up_instruction, sbar_recommendation, activity_recommendation, next_control_date, wound_care_schedule, assessed_at, referral, referral_to)')
+      .select('visit_date, status, reported_change, signs, observation_notes, recorder_name, assessments(nurse_id, color_code, has_wound, bwat_score, score_color, override_reason, follow_up_instruction, sbar_recommendation, activity_recommendation, next_control_date, wound_care_schedule, assessed_at, referral, referral_to)')
       .eq('patient_id', pasienId)
       .neq('status', 'draft')
       .order('visit_date', { ascending: false })
@@ -45,6 +45,12 @@ export async function cetakKartuKaki(pasienId) {
   const pend = pendRes.data
   const set = Object.fromEntries((setRes.data ?? []).map((s) => [s.key, s.value]))
   const terakhir = kartu.find((k) => k.a)?.a ?? null
+  let namaPerawat = null
+  if (terakhir?.nurse_id) {
+    const { data: n } = await supabase.from('profiles').select('full_name').eq('id', terakhir.nurse_id).maybeSingle()
+    namaPerawat = n?.full_name ?? null
+  }
+  const namaKader = pend?.name ?? kartu.find((k) => k.recorder_name)?.recorder_name ?? null
 
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const W = doc.internal.pageSize.getWidth()
@@ -53,7 +59,7 @@ export async function cetakKartuKaki(pasienId) {
   let y = 0
 
   const muat = (tinggi) => {
-    if (y + tinggi > 282) {
+    if (y + tinggi > 285) {
       doc.addPage()
       y = 16
     }
@@ -81,7 +87,7 @@ export async function cetakKartuKaki(pasienId) {
 
   // ---- Kepala kartu
   doc.setFillColor(...BERRY)
-  doc.rect(0, 0, W, 26, 'F')
+  doc.rect(0, 0, W, 24, 'F')
   doc.setTextColor(255, 255, 255)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(20)
@@ -89,7 +95,7 @@ export async function cetakKartuKaki(pasienId) {
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(10.5)
   doc.text(['Sahabat Kaki Desa', set.nama_desa, set.nama_puskesmas].filter(Boolean).join('  -  '), M, 20)
-  y = 34
+  y = 31
 
   // ---- Kode warna terakhir
   const w = terakhir ? WARNA[terakhir.color_code] : null
@@ -141,7 +147,7 @@ export async function cetakKartuKaki(pasienId) {
     startY: y,
     theme: 'plain',
     margin: { left: M, right: M },
-    styles: { fontSize: 10.5, cellPadding: 1, textColor: TINTA },
+    styles: { fontSize: 10.5, cellPadding: 0.75, textColor: TINTA },
     columnStyles: { 0: { fontStyle: 'bold', cellWidth: 48, textColor: ABU } },
     body: [
       ['Nama', p.full_name],
@@ -161,7 +167,7 @@ export async function cetakKartuKaki(pasienId) {
     startY: y,
     theme: 'plain',
     margin: { left: M, right: M },
-    styles: { fontSize: 10.5, cellPadding: 1, textColor: TINTA },
+    styles: { fontSize: 10.5, cellPadding: 0.75, textColor: TINTA },
     columnStyles: { 0: { fontStyle: 'bold', cellWidth: 48, textColor: ABU } },
     body: [
       ...(terakhir?.bwat_score ? [['Skor luka (BWAT)', `${terakhir.bwat_score} dari 65 (13-20 hijau, 21-40 kuning, 41-65 merah)`]] : []),
@@ -180,7 +186,7 @@ export async function cetakKartuKaki(pasienId) {
     startY: y,
     theme: 'plain',
     margin: { left: M, right: M },
-    styles: { fontSize: 10.5, cellPadding: 1, textColor: TINTA },
+    styles: { fontSize: 10.5, cellPadding: 0.75, textColor: TINTA },
     columnStyles: { 0: { fontStyle: 'bold', cellWidth: 48, textColor: ABU } },
     body: [
       ['Kader pendamping', pend ? [pend.name, pend.phone].filter(Boolean).join(' - ') : '-'],
@@ -198,8 +204,8 @@ export async function cetakKartuKaki(pasienId) {
     margin: { left: M, right: M },
     styles: { fontSize: 9.5, cellPadding: 1.8, textColor: TINTA, lineColor: [230, 200, 212] },
     headStyles: { fillColor: BERRY, textColor: 255, fontStyle: 'bold' },
-    columnStyles: { 0: { cellWidth: 24 }, 1: { cellWidth: 26 }, 2: { cellWidth: 34 }, 3: { cellWidth: 20, fontStyle: 'bold' } },
-    head: [['Tanggal', 'Perubahan', 'Tanda', 'Kode', 'Arahan perawat']],
+    columnStyles: { 0: { cellWidth: 23 }, 1: { cellWidth: 24 }, 2: { cellWidth: 30 }, 3: { cellWidth: 21, fontStyle: 'bold' }, 5: { cellWidth: 18, minCellHeight: 9 } },
+    head: [['Tanggal', 'Perubahan', 'Tanda', 'Kode', 'Arahan perawat', 'Paraf']],
     body: kartu.length
       ? kartu.map((k) => [
           formatTanggalPendek(k.visit_date),
@@ -207,8 +213,9 @@ export async function cetakKartuKaki(pasienId) {
           (k.signs ?? []).map((s) => TANDA[s]).join(', ') || '-',
           k.a ? `${WARNA[k.a.color_code].label}${k.a.bwat_score ? ` (${k.a.bwat_score})` : ''}` : 'Belum',
           k.a?.follow_up_instruction ?? '-',
+          '',
         ])
-      : [['-', '-', '-', '-', 'Belum ada catatan pemeriksaan']],
+      : [['-', '-', '-', '-', 'Belum ada catatan pemeriksaan', '']],
     didParseCell: (data) => {
       if (data.section === 'body' && data.column.index === 3) {
         const kode = Object.values(WARNA).find((x) => String(data.cell.raw).startsWith(x.label))
@@ -223,8 +230,33 @@ export async function cetakKartuKaki(pasienId) {
 
   // ---- Pengingat perawatan diri
   judul('Pengingat perawatan diri')
-  PENGINGAT.forEach((t, i) => paragraf(`${i + 1}. ${t}`, { indent: 1 }))
+  PENGINGAT.forEach((t, i) => paragraf(`${i + 1}. ${t}`, { indent: 1, size: 10 }))
   y += 2
+
+  // ---- Paraf kader & perawat (ditulis tangan pada kartu cetak)
+  muat(22)
+  const kotak = (lebar - 10) / 2
+  ;[
+    ['Paraf Kader', namaKader],
+    ['Paraf Perawat', namaPerawat],
+  ].forEach(([label, nama], i) => {
+    const x = M + i * (kotak + 10)
+    doc.setDrawColor(...BERRY)
+    doc.setLineWidth(0.3)
+    doc.roundedRect(x, y, kotak, 20, 2, 2, 'S')
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.setTextColor(...BERRY)
+    doc.text(label, x + 4, y + 5.5)
+    doc.setDrawColor(...ABU)
+    doc.setLineWidth(0.2)
+    doc.line(x + 4, y + 14, x + kotak - 4, y + 14)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9.5)
+    doc.setTextColor(...TINTA)
+    doc.text(nama ? `(${nama})` : '(....................................)', x + kotak / 2, y + 18, { align: 'center' })
+  })
+  y += 23
 
   // ---- Kaki halaman
   const total = doc.getNumberOfPages()
