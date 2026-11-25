@@ -463,6 +463,50 @@ select uji.cek('H8 pengguna login tetap bisa membaca view ringkas',
   uji.sebagai('desa', 'select * from public.patient_directory'), 'ok:%');
 
 -- =============================================================================
+-- I. Alur Fase 2 (Pasien, Sahabat Kaki, Kartu Kaki Sehat)
+-- =============================================================================
+insert into uji.data values ('K3', '30000000-0000-0000-0000-000000000003');
+delete from public.notifications;
+select uji.cek('I1 kader menyimpan kartu sebagai draft (belum ada notifikasi)',
+  uji.sebagai('kader', format($q$insert into public.foot_visits (id, patient_id, reported_change, status)
+    values (%L, %L, 'membaik', 'draft')$q$, uji.id('K3'), uji.id('P1'))), 'ok:1');
+select uji.cek('I2 draft tidak mengirim notifikasi ke perawat',
+  (select count(*)::text from public.notifications where recipient_id = uji.id('perawat')), '0');
+select uji.cek('I3 kader mengubah catatan draft',
+  uji.sebagai('kader', format('update public.foot_visits set observation_notes = %L where id = %L', 'luka mengering', uji.id('K3'))), 'ok:1');
+select uji.cek('I4 kader mengirim draft ke perawat',
+  uji.sebagai('kader', format('update public.foot_visits set status = %L where id = %L', 'dikirim', uji.id('K3'))), 'ok:1');
+select uji.cek('I5 perawat menerima notifikasi saat draft dikirim',
+  (select count(*)::text from public.notifications where recipient_id = uji.id('perawat') and link = '/kartu-kaki/' || uji.id('K3')), '1');
+select uji.cek('I6 waktu kirim tercatat',
+  (select (submitted_at is not null)::text from public.foot_visits where id = uji.id('K3')), 'true');
+select uji.sebagai('perawat', format($q$insert into public.assessments (foot_visit_id, color_code, follow_up_instruction)
+  values (%L, 'kuning', 'Kontrol Kamis')$q$, uji.id('K3')));
+select uji.cek('I7 perawat mengubah kode warna -> kader diberi tahu lagi',
+  uji.sebagai('perawat', format('update public.assessments set color_code = %L, follow_up_instruction = %L where foot_visit_id = %L',
+    'hijau', 'Lanjut perawatan', uji.id('K3'))), 'ok:1');
+select uji.cek('I8 kader menerima 2 notifikasi untuk kartu ini (kuning lalu hijau)',
+  (select count(*)::text from public.notifications where recipient_id = uji.id('kader') and link = '/kartu-kaki/' || uji.id('K3')), '2');
+select uji.cek('I9 perawat menonaktifkan pendamping lama',
+  uji.sebagai('perawat', format('update public.companions set active = false, ended_at = current_date where id = %L', uji.id('C1'))), 'ok:1');
+select uji.cek('I10 perawat memasangkan pendamping baru',
+  uji.sebagai('perawat', format($q$insert into public.companions (patient_id, profile_id, name) values (%L, %L, 'Kader Budi')$q$,
+    uji.id('P1'), uji.id('kader2'))), 'ok:1');
+select uji.cek('I11 pendamping lama tidak bisa lagi mencatat kunjungan',
+  uji.sebagai('kader', format($q$insert into public.companion_visits (patient_id, companion_id, activity_type)
+    values (%L, %L, 'telepon')$q$, uji.id('P1'), uji.id('C1'))), 'error:%');
+select uji.cek('I12 riwayat kunjungan pendamping lama tetap ada',
+  (select (count(*) >= 2)::text from public.companion_visits where companion_id = uji.id('C1')), 'true');
+select uji.cek('I13 kader memutus akun keluarga dari data pasien',
+  uji.sebagai('kader', format('select public.link_patient_account(%L, null)', uji.id('pasien'))), 'ok:%');
+select uji.cek('I14 setelah diputus, akun keluarga tidak melihat data pasien',
+  uji.nilai('pasien', 'select count(*) from public.patients'), '0');
+select uji.cek('I15 kader mengubah identitas pasien (Edit di matriks)',
+  uji.sebagai('kader', format('update public.patients set phone = %L where id = %L', '0811', uji.id('P2'))), 'ok:1');
+select uji.cek('I16 perangkat desa tidak bisa mengubah identitas pasien',
+  uji.sebagai('desa', format('update public.patients set phone = %L where id = %L', '0', uji.id('P2'))), 'ok:0');
+
+-- =============================================================================
 -- Hasil
 -- =============================================================================
 \echo

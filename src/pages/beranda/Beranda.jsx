@@ -243,6 +243,57 @@ function Pintasan({ role }) {
   )
 }
 
+/** Untuk Pasien/Keluarga: kode warna terakhir, jadwal kontrol, dan arahan perawat */
+function KondisiSaya({ patientId }) {
+  const [k, setK] = useState(undefined)
+  useEffect(() => {
+    supabase
+      .from('foot_visits')
+      .select('id, visit_date, assessments(color_code, next_control_date, follow_up_instruction, activity_recommendation)')
+      .eq('patient_id', patientId)
+      .neq('status', 'draft')
+      .order('visit_date', { ascending: false })
+      .limit(10)
+      .then(({ data }) => {
+        const ada = (data ?? []).find((x) => (Array.isArray(x.assessments) ? x.assessments[0] : x.assessments))
+        setK(ada ? { ...ada, a: Array.isArray(ada.assessments) ? ada.assessments[0] : ada.assessments } : null)
+      })
+  }, [patientId])
+  if (k === undefined) return null
+  return (
+    <section aria-labelledby="kondisi-saya">
+      <h2 id="kondisi-saya" className="mb-3 text-xl font-extrabold">
+        Kondisi kaki terakhir
+      </h2>
+      {!k ? (
+        <EmptyState icon={ClipboardList} title="Belum ada penilaian perawat">
+          Kader akan mencatat Kartu Kaki Sehat saat kunjungan, lalu perawat memberi penilaian.
+        </EmptyState>
+      ) : (
+        <Link to={`/kartu-kaki/${k.id}`} className="block rounded-card border-2 border-line bg-surface p-4 shadow-card hover:border-primary/40">
+          <div className="flex flex-wrap items-center gap-2">
+            <CodeBadge code={k.a.color_code} />
+            <span className="text-muted">dinilai untuk kunjungan {formatTanggalPendek(k.visit_date)}</span>
+          </div>
+          <p className="mt-2 text-lg">
+            <strong>Kontrol berikutnya:</strong> {k.a.next_control_date ? formatTanggal(k.a.next_control_date) : 'menunggu jadwal'}
+          </p>
+          {k.a.follow_up_instruction && (
+            <p className="mt-1">
+              <strong>Arahan perawat:</strong> {k.a.follow_up_instruction}
+            </p>
+          )}
+          {k.a.activity_recommendation && (
+            <p className="mt-1">
+              <strong>Aktivitas:</strong> {k.a.activity_recommendation}
+            </p>
+          )}
+        </Link>
+      )}
+    </section>
+  )
+}
+
 export default function Beranda() {
   const { profile, approved } = useAuth()
   const [stats, setStats] = useState(null)
@@ -266,6 +317,7 @@ export default function Beranda() {
     <div className="space-y-7">
       <Sambutan profile={profile} stats={stats} akunMenunggu={akunMenunggu} />
       {approved && ['perawat', 'kader', 'admin'].includes(role) && <PerluPerhatian role={role} />}
+      {approved && role === 'pasien' && profile.patient_id && <KondisiSaya patientId={profile.patient_id} />}
       <Ringkasan stats={stats} />
       <Pintasan role={role} />
       <ArtikelSection />
