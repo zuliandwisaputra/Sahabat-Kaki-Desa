@@ -585,6 +585,36 @@ select uji.cek('K11 perangkat desa melihat skor di ringkasan kartu (tanpa rincia
   uji.nilai('desa', format('select bwat_score::text from public.foot_card_summary where id = %L', uji.id('K11'))), '52');
 
 -- =============================================================================
+-- L. Evaluasi & rekap kuesioner (migrasi 9) — angka saja, tanpa identitas
+-- =============================================================================
+create function uji.eval(p_akun text, p_jalur text) returns text language plpgsql as $$
+begin
+  return uji.nilai(p_akun, format($q$select (public.evaluation_indicators(current_date - 60, current_date) #>> %L)$q$, p_jalur));
+end $$;
+select uji.cek('L1 perangkat desa bisa membuka evaluasi (angka saja)',
+  uji.sebagai('desa', 'select public.evaluation_indicators(current_date - 30, current_date)'), 'ok:%');
+select uji.cek('L2 akun yang belum disetujui tidak bisa membuka evaluasi',
+  uji.sebagai('baru', 'select public.evaluation_indicators(current_date - 30, current_date)'), 'error:%');
+select uji.cek('L3 pengunjung tanpa login tidak bisa membuka evaluasi',
+  uji.sebagai(null, 'select public.evaluation_indicators(current_date - 30, current_date)'), 'error:%');
+select uji.cek('L4 fungsi bantu daftar pasien tidak bisa dipanggil langsung',
+  uji.sebagai('kader', 'select * from public.eval_pasien(null)'), 'error:%');
+select uji.cek('L5 indikator 2: pasien dengan pendamping dihitung',
+  uji.eval('kader', '{i2,dengan_pendamping}'), '1');
+select uji.cek('L6 indikator 1: kader & pendamping terlatih (1 akun + 1 nama)',
+  uji.eval('desa', '{i1,terlatih}'), '2');
+select uji.cek('L7 indikator 8: rapat Siaga Kaki dihitung',
+  uji.eval('pasien2', '{i8,rapat}'), '1');
+select uji.cek('L8 indikator 9: skor kuesioner awal (rata-rata)',
+  uji.nilai('desa', $q$select x ->> 'awal' from jsonb_array_elements(public.evaluation_indicators(current_date - 60, current_date) -> 'i9') x where x ->> 'aspek' = 'dukungan_sosial'$q$), '4.50');
+select uji.cek('L9 grafik bulanan mengembalikan 6 bulan',
+  uji.sebagai('kader', 'select * from public.evaluation_monthly(6)'), 'ok:6');
+select uji.cek('L10 kader melihat rekap kuesioner tanpa identitas',
+  uji.sebagai('kader', 'select * from public.questionnaire_recap()'), 'ok:1');
+select uji.cek('L11 rekap kuesioner tidak memuat kolom pasien',
+  (select (pg_get_function_result('public.questionnaire_recap()'::regprocedure) like '%patient%')::text), 'false');
+
+-- =============================================================================
 -- Hasil
 -- =============================================================================
 \echo
