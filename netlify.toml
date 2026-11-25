@@ -1,0 +1,13 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "24"
+
+# Semua alamat diarahkan ke index.html supaya React Router yang mengatur halaman
+# (misalnya membuka /pasien langsung atau me-refresh halaman tidak menghasilkan 404).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
