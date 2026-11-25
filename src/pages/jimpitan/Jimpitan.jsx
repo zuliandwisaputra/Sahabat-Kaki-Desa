@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { ArrowDownLeft, ArrowUpRight, Bike, FileText, Pencil, Plus, Trash2, Wallet } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, Bike, FileDown, FileSpreadsheet, FileText, Pencil, Plus, Trash2, Wallet } from 'lucide-react'
+import { unduhExcel, unduhPdf } from '../../lib/ekspor'
 import { supabase } from '../../lib/supabase'
 import { cek, useLoad } from '../../lib/useLoad'
 import { pesanError } from '../../lib/errors'
@@ -25,6 +26,7 @@ export default function Jimpitan() {
   const [form, setForm] = useState({ open: false, awal: null })
   const [hapus, setHapus] = useState(null)
   const [proses, setProses] = useState(false)
+  const [ekspor, setEkspor] = useState(null)
 
   const { data, loading, error, reload } = useLoad(
     () => supabase.from('funds').select('*').order('trx_date', { ascending: false }).order('created_at', { ascending: false }).then(cek),
@@ -54,6 +56,34 @@ export default function Jimpitan() {
     }
   }, [data, bulan])
 
+  // JIM-04: ekspor laporan ke Excel/PDF
+  async function unduh(jenis) {
+    setEkspor(jenis)
+    try {
+      const urut = [...(data ?? [])].sort((a, b) => (a.trx_date < b.trx_date ? -1 : 1))
+      let saldo = 0
+      const transaksi = urut.map((f) => {
+        saldo += f.trx_type === 'masuk' ? Number(f.amount) : -Number(f.amount)
+        return { tgl: formatTanggalPendek(f.trx_date), kategori: f.category, ket: f.description, masuk: f.trx_type === 'masuk' ? formatRupiah(f.amount) : '', keluar: f.trx_type === 'keluar' ? formatRupiah(f.amount) : '', saldo: formatRupiah(saldo) }
+      })
+      const kolomT = [{ key: 'tgl', label: 'Tanggal' }, { key: 'kategori', label: 'Kategori' }, { key: 'ket', label: 'Keterangan' }, { key: 'masuk', label: 'Masuk' }, { key: 'keluar', label: 'Keluar' }, { key: 'saldo', label: 'Saldo' }]
+      const bulanan = [...olah.laporan].reverse().map((l) => ({ bulan: labelBulan(l.ym), masuk: formatRupiah(l.masuk), keluar: formatRupiah(l.keluar), saldo: formatRupiah(l.saldo) }))
+      const kolomB = [{ key: 'bulan', label: 'Bulan' }, { key: 'masuk', label: 'Pemasukan' }, { key: 'keluar', label: 'Pengeluaran' }, { key: 'saldo', label: 'Saldo akhir' }]
+      if (jenis === 'excel') {
+        await unduhExcel('Laporan-Jimpitan-Sehat', [{ nama: 'Laporan bulanan', kolom: kolomB, baris: bulanan }, { nama: 'Transaksi', kolom: kolomT, baris: transaksi }])
+      } else {
+        await unduhPdf('Laporan-Jimpitan-Sehat', 'Laporan Jimpitan Sehat', [
+          { judul: `Laporan bulanan - saldo saat ini ${formatRupiah(olah.saldo)}`, kolom: kolomB, baris: bulanan },
+          { judul: 'Rincian transaksi', kolom: kolomT, baris: transaksi, catatan: 'Jimpitan Sehat hanya mencatat; tidak ada transfer uang. Keterangan tidak memuat data pribadi pasien.' },
+        ])
+      }
+    } catch (err) {
+      toast.gagal(pesanError(err))
+    } finally {
+      setEkspor(null)
+    }
+  }
+
   async function bukaBukti(path) {
     const url = await signedUrl('fund-proofs', path, 300)
     if (url) window.open(url, '_blank', 'noopener')
@@ -78,11 +108,23 @@ export default function Jimpitan() {
         description="Dana gotong royong warga untuk Ojek Sehat, Pos Kaki, dan pelatihan kader. Hanya pencatatan, tanpa transfer uang."
         menu="jimpitan"
         actions={
-          <Can do="jimpitan.catat">
-            <Button icon={Plus} onClick={() => setForm({ open: true, awal: null })}>
-              Catat transaksi
-            </Button>
-          </Can>
+          <>
+            <Can do="jimpitan.catat">
+              <Button icon={Plus} onClick={() => setForm({ open: true, awal: null })}>
+                Catat transaksi
+              </Button>
+            </Can>
+            {data && (
+              <>
+                <Button variant="secondary" size="sm" icon={FileSpreadsheet} loading={ekspor === 'excel'} onClick={() => unduh('excel')} className="min-h-13">
+                  Excel
+                </Button>
+                <Button variant="secondary" size="sm" icon={FileDown} loading={ekspor === 'pdf'} onClick={() => unduh('pdf')} className="min-h-13">
+                  PDF
+                </Button>
+              </>
+            )}
+          </>
         }
       />
 

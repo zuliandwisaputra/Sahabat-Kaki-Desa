@@ -18,7 +18,9 @@ const Beranda = lazy(() => import('./pages/beranda/Beranda'))
 const Profil = lazy(() => import('./pages/profil/Profil'))
 const KelolaAkun = lazy(() => import('./pages/kelola-akun/KelolaAkun'))
 const Lainnya = lazy(() => import('./pages/umum/Lainnya'))
-const ModulDisiapkan = lazy(() => import('./pages/umum/ModulDisiapkan'))
+const Kuesioner = lazy(() => import('./pages/kuesioner/Kuesioner'))
+const Evaluasi = lazy(() => import('./pages/evaluasi/Evaluasi'))
+const KelolaData = lazy(() => import('./pages/kelola-data/KelolaData'))
 const DaftarPasien = lazy(() => import('./pages/pasien/DaftarPasien'))
 const FormPasien = lazy(() => import('./pages/pasien/FormPasien'))
 const DetailPasien = lazy(() => import('./pages/pasien/DetailPasien'))
@@ -59,13 +61,6 @@ function RouteError() {
     </div>
   )
 }
-
-// Modul yang dibangun di tahap berikutnya (sementara menampilkan "sedang disiapkan")
-const modul = (key, title) => ({
-  path: `${key}/*`,
-  handle: { title, menu: key },
-  element: <ModulDisiapkan />,
-})
 
 const router = createBrowserRouter([
   {
@@ -127,9 +122,9 @@ const router = createBrowserRouter([
             ],
           },
           { path: 'pemberdayaan', handle: { title: 'Pemberdayaan Desa', menu: 'pemberdayaan' }, element: <Pemberdayaan /> },
-          modul('kuesioner', 'Kuesioner'),
-          modul('evaluasi', 'Evaluasi'),
-          modul('kelola-data', 'Kelola Data'),
+          { path: 'kuesioner', handle: { title: 'Kuesioner', menu: 'kuesioner' }, element: <Kuesioner /> },
+          { path: 'evaluasi', handle: { title: 'Evaluasi', menu: 'evaluasi' }, element: <Evaluasi /> },
+          { path: 'kelola-data', handle: { title: 'Kelola Data', menu: 'kelola-data' }, element: <KelolaData /> },
           { path: '*', handle: { title: 'Tidak ditemukan' }, element: <NotFound /> },
         ],
       },
