@@ -6,9 +6,9 @@ import { formatTanggal, formatTanggalPendek } from './format'
 import { PERUBAHAN, TANDA, alamatSingkat, satuPenilaian, umur } from './pasien'
 
 const WARNA = {
-  hijau: { label: 'HIJAU', arti: 'Tidak ada tanda bahaya. Lanjutkan perawatan dan kontrol sesuai jadwal.', fill: [220, 252, 231], text: [22, 101, 52], line: [34, 197, 94] },
-  kuning: { label: 'KUNING', arti: 'Perlu perhatian. Hubungi kader atau perawat untuk arahan dan jadwal pemeriksaan.', fill: [254, 249, 195], text: [133, 77, 14], line: [234, 179, 8] },
-  merah: { label: 'MERAH', arti: 'Tanda bahaya. Segera ke tenaga kesehatan.', fill: [254, 226, 226], text: [153, 27, 27], line: [239, 68, 68] },
+  hijau: { label: 'HIJAU', singkat: 'Tidak ada tanda bahaya', arti: 'Tidak ada tanda bahaya. Lanjutkan perawatan dan kontrol sesuai jadwal.', fill: [220, 252, 231], text: [22, 101, 52], line: [34, 197, 94] },
+  kuning: { label: 'KUNING', singkat: 'Perlu perhatian, hubungi kader/perawat', arti: 'Perlu perhatian. Hubungi kader atau perawat untuk arahan dan jadwal pemeriksaan.', fill: [254, 249, 195], text: [133, 77, 14], line: [234, 179, 8] },
+  merah: { label: 'MERAH', singkat: 'Tanda bahaya, segera ke tenaga kesehatan', arti: 'Tanda bahaya. Segera ke tenaga kesehatan.', fill: [254, 226, 226], text: [153, 27, 27], line: [239, 68, 68] },
 }
 const BERRY = [156, 36, 87]
 const TINTA = [59, 30, 42]
@@ -113,7 +113,26 @@ export async function cetakKartuKaki(pasienId) {
     M + 5,
     y + 15,
   )
-  y += 30
+  y += 27
+
+  // ---- Arti kode warna (satu baris ringkas)
+  const kolom = lebar / 3
+  Object.values(WARNA).forEach((k, i) => {
+    const x = M + i * kolom
+    doc.setFillColor(...k.fill)
+    doc.setDrawColor(...k.line)
+    doc.setLineWidth(0.4)
+    doc.roundedRect(x, y - 3.8, 17, 5.6, 1.2, 1.2, 'FD')
+    doc.setTextColor(...k.text)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    doc.text(k.label, x + 8.5, y, { align: 'center' })
+    doc.setTextColor(...TINTA)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8.5)
+    doc.text(doc.splitTextToSize(k.singkat, kolom - 20), x + 19, y - 0.6)
+  })
+  y += 12
 
   // ---- Identitas
   judul('Identitas pasien')
@@ -154,6 +173,22 @@ export async function cetakKartuKaki(pasienId) {
   })
   y = doc.lastAutoTable.finalY + 6
 
+  // ---- Kontak kader & Puskesmas (KKS-01)
+  judul('Kontak')
+  autoTable(doc, {
+    startY: y,
+    theme: 'plain',
+    margin: { left: M, right: M },
+    styles: { fontSize: 10.5, cellPadding: 1.2, textColor: TINTA },
+    columnStyles: { 0: { fontStyle: 'bold', cellWidth: 48, textColor: ABU } },
+    body: [
+      ['Kader pendamping', pend ? [pend.name, pend.phone].filter(Boolean).join(' - ') : '-'],
+      ['Puskesmas', [set.nama_puskesmas, set.telepon_puskesmas].filter(Boolean).join(' - ') || '-'],
+      ...(set.link_grup_wa ? [['Grup WhatsApp', set.link_grup_wa]] : []),
+    ],
+  })
+  y = doc.lastAutoTable.finalY + 6
+
   // ---- Riwayat pemeriksaan
   judul('Catatan pemeriksaan kaki')
   autoTable(doc, {
@@ -189,32 +224,6 @@ export async function cetakKartuKaki(pasienId) {
   judul('Pengingat perawatan diri')
   PENGINGAT.forEach((t, i) => paragraf(`${i + 1}. ${t}`, { indent: 1 }))
   y += 2
-
-  // ---- Arti kode warna
-  judul('Arti kode warna')
-  for (const k of Object.values(WARNA)) {
-    muat(9)
-    doc.setFillColor(...k.fill)
-    doc.setDrawColor(...k.line)
-    doc.setLineWidth(0.5)
-    doc.roundedRect(M, y - 4.2, 22, 6.5, 1.5, 1.5, 'FD')
-    doc.setTextColor(...k.text)
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9.5)
-    doc.text(k.label, M + 11, y, { align: 'center' })
-    doc.setTextColor(...TINTA)
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(10)
-    doc.text(doc.splitTextToSize(k.arti, lebar - 27), M + 26, y)
-    y += 8.5
-  }
-  y += 2
-
-  // ---- Kontak
-  judul('Kontak')
-  paragraf(`Kader pendamping: ${pend ? `${pend.name}${pend.phone ? ` - ${pend.phone}` : ''}` : '-'}`)
-  paragraf(`Puskesmas: ${[set.nama_puskesmas, set.telepon_puskesmas].filter(Boolean).join(' - ') || '-'}`)
-  if (set.link_grup_wa) paragraf(`Grup WhatsApp Sahabat Kaki: ${set.link_grup_wa}`)
 
   // ---- Kaki halaman
   const total = doc.getNumberOfPages()

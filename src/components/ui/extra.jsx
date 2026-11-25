@@ -25,8 +25,8 @@ export function LangkahKartu({ status }) {
         return (
           <li key={s} aria-current={i === idx ? 'step' : undefined}>
             <span className={`block h-2 rounded-full ${selesai ? 'bg-primary' : 'bg-line'}`} />
-            <span className={`mt-1.5 block text-[15px] leading-tight ${selesai ? 'font-bold text-ink' : 'text-muted'}`}>
-              {STATUS_KARTU[s].label}
+            <span className={`mt-1.5 block text-[15px] leading-tight break-words hyphens-manual ${selesai ? 'font-bold text-ink' : 'text-muted'}`}>
+              {s === 'ditindaklanjuti' ? 'Ditindak\u00ADlanjuti' : STATUS_KARTU[s].label}
             </span>
           </li>
         )

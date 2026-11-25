@@ -12,9 +12,9 @@ import { Banner, KODE_WARNA } from '../../components/ui/misc'
 // Ukuran pembeda rinci belum dijabarkan di makalah (subbab 4.3 poin 4);
 // setelah kelompok menyusunnya, cukup lengkapi teks di bawah ini.
 export const PANDUAN_KODE = {
-  hijau: 'Tidak ada tanda bahaya. Lanjut perawatan dan kontrol sesuai jadwal.',
-  kuning: 'Perlu perhatian. Kader/perawat memberi arahan dan menjadwalkan pemeriksaan.',
-  merah: 'Tanda bahaya. Pasien segera ke tenaga kesehatan; pertimbangkan rujukan ke Puskesmas/RS.',
+  hijau: 'Lanjut perawatan dan kontrol sesuai jadwal.',
+  kuning: 'Kader/perawat memberi arahan dan menjadwalkan pemeriksaan.',
+  merah: 'Pasien segera ke tenaga kesehatan; pertimbangkan rujukan ke Puskesmas/RS.',
 }
 
 const KOSONG = {
