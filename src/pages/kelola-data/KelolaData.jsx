@@ -97,7 +97,7 @@ function TabMaster({ bolehKelola }) {
             ) : (
               <ul className="mt-2 flex flex-wrap gap-2">
                 {rows.map((m) => (
-                  <li key={m.id} className={`inline-flex items-center gap-1 rounded-full border-2 py-1 pr-1 pl-3 font-semibold ${m.active ? 'border-line bg-surface' : 'border-dashed border-line bg-soft/40 text-muted line-through'}`}>
+                  <li key={m.id ?? `${m.category}-${m.value}`} className={`inline-flex items-center gap-1 rounded-full border-2 py-1 pr-1 pl-3 font-semibold ${m.active ? 'border-line bg-surface' : 'border-dashed border-line bg-soft/40 text-muted line-through'}`}>
                     {m.value}
                     {bolehKelola && (
                       <>

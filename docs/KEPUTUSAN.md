@@ -76,3 +76,16 @@ ambigu di PRD, disetujui pemilik proyek pada 25 November 2026.
     database (migrasi `20261126000100_skor_bwat.sql`). Kartu lama tanpa skor tetap sah.
 15. Instrumen kuesioner Fase 4: WHOQOL-BREF (kualitas hidup), MSPSS (dukungan sosial),
     SDSCA (kemandirian/manajemen diri).
+16. Kalimat butir kuesioner di aplikasi adalah versi ringkas berbahasa sederhana untuk
+    prototipe (rumus skor mengikuti instrumen aslinya). Untuk pengambilan data sungguhan,
+    gunakan teks resmi versi Bahasa Indonesia yang dirujuk makalah.
+
+## Teknis (Fase 4)
+
+17. Ekspor Excel memakai SheetJS dari npm (`xlsx@0.18.5`). Peringatan keamanannya hanya
+    berlaku saat **membaca** file Excel dari luar; aplikasi ini hanya **menulis** file,
+    sehingga aman. Jika kelak perlu membaca file Excel, ganti ke paket resmi dari
+    cdn.sheetjs.com.
+18. Data contoh (`supabase/seed.sql`) dan akun roleplay (`npm run akun-demo`) memakai
+    nama fiktif. Username: koordinator (Admin), perawat.cindy, kader.ani,
+    keluarga.s (Pasien/Keluarga, terhubung ke Ny. S), desa.harjo.

@@ -74,7 +74,7 @@ Laragon tidak dipakai, jadi tidak perlu menekan "Start All".
 
    Tunggu sekitar 2 menit sampai proyek siap.
 2. **Jalankan migrasi database.** Semua file ada di folder `supabase/migrations/`.
-   Jalankan **berurutan dari 1 sampai 7**:
+   Jalankan **berurutan dari 1 sampai 9**:
    1. Di Supabase, buka menu **SQL Editor**, lalu klik **New query**.
    2. Buka file migrasi dengan Notepad atau VS Code, tekan Ctrl+A lalu Ctrl+C, dan tempel
       (Ctrl+V) di SQL Editor.
@@ -89,6 +89,8 @@ Laragon tidak dipakai, jadi tidak perlu menekan "Start All".
    | 5 | `20261125000500_rpc.sql` | fungsi untuk aplikasi |
    | 6 | `20261125000600_storage_realtime.sql` | penyimpanan foto privat + Realtime |
    | 7 | `20261125000700_artikel_edukasi.sql` | 4 artikel edukasi bawaan |
+   | 8 | `20261126000100_skor_bwat.sql` | skor luka BWAT untuk kode warna |
+   | 9 | `20261126000200_evaluasi.sql` | 9 indikator Evaluasi + rekap kuesioner |
 
    > Kalau satu file gagal, **jangan lanjut ke file berikutnya**. Salin pesan error-nya dan
    > tanyakan dulu.
@@ -148,6 +150,60 @@ Admin tidak bisa dipilih di halaman Daftar.
    ```
 3. Muat ulang website (F5). Menu **Kelola Akun** akan muncul.
 
+### Data contoh & 5 akun untuk roleplay
+
+1. **Data contoh** (semua fiktif: Ny. S dan 3 pasien lain, kunjungan, Kartu Kaki Sehat,
+   Pos Kaki, Ojek Sehat, Jimpitan, kegiatan, kuesioner awal & ulang). Di Supabase
+   **SQL Editor**, buka `supabase/seed.sql`, salin semua, lalu **Run**. Aman dijalankan ulang.
+   ```powershell
+   notepad supabase\seed.sql
+   ```
+2. **Kunci rahasia untuk script.** Buat file `.env.local` (sudah diabaikan Git, tidak ikut
+   ke GitHub):
+   ```powershell
+   notepad .env.local
+   ```
+   Isi dengan (ambil **secret key / service_role** di Project Settings → API Keys):
+   ```
+   SUPABASE_URL=https://abcdxyz.supabase.co
+   SUPABASE_SERVICE_ROLE_KEY=sb_secret_xxxxxxxx
+   DEMO_PASSWORD=GantiPasswordIni123
+   ```
+   ⚠️ Kunci ini bisa membuka **semua** data. Jangan dibagikan, jangan ditaruh di `.env`.
+3. **Buat 5 akun** (Admin, Perawat, Kader, Pasien/Keluarga, Perangkat Desa) dan hubungkan
+   akun keluarga ke Ny. S:
+   ```powershell
+   npm run akun-demo
+   ```
+   Terminal menampilkan tabel username & email beserta passwordnya. Bagikan hanya ke
+   anggota kelompok dan dosen.
+
+---
+
+## C2. Deploy gratis ke Netlify
+
+1. Pastikan kode terbaru sudah ada di GitHub (branch yang dipakai).
+2. Buka <https://app.netlify.com>, masuk dengan GitHub, klik **Add new project → Import an
+   existing project → GitHub**, pilih repo `Sahabat-Kaki-Desa`.
+3. **Branch to deploy**: pilih branch yang berisi kode ini. Pengaturan build terbaca otomatis
+   dari `netlify.toml` (`npm run build`, folder `dist`, Node 24).
+4. Sebelum deploy, buka **Environment variables** dan tambahkan dua variabel yang sama
+   dengan isi `.env` Anda:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY` (publishable key)
+
+   **Jangan** menambahkan service role / secret key di Netlify.
+5. Klik **Deploy**. Setelah selesai, Anda mendapat alamat seperti
+   `https://sahabat-kaki-desa.netlify.app` (nama bisa diganti di **Site configuration →
+   Change site name**).
+6. Di Supabase **Authentication → URL Configuration**:
+   - **Site URL**: ganti dengan alamat Netlify Anda.
+   - **Redirect URLs**: tambahkan `https://NAMA-SITUS.netlify.app/**` (biarkan juga
+     `http://localhost:5173/**` supaya tetap bisa dicoba di laptop).
+7. Buka alamat Netlify di HP. Yang pertama muncul harus halaman **Masuk**.
+
+Setiap kali kode di branch tersebut diperbarui (push), Netlify otomatis membangun ulang.
+
 ---
 
 ## D. Struktur folder
@@ -179,7 +235,7 @@ netlify.toml          pengaturan deploy Netlify (redirect SPA)
 ## F. Untuk pengembang: uji hak akses database
 
 `tests/db/run.sh` menjalankan semua migrasi di PostgreSQL lokal (15+) dengan tiruan
-Supabase, lalu menguji 135 skenario hak akses per peran:
+Supabase (dua mode hak bawaan), lalu menguji 193 skenario hak akses per peran:
 
 ```bash
 bash tests/db/run.sh

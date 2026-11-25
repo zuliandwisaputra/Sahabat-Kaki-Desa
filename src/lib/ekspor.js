@@ -1,6 +1,16 @@
 // Ekspor laporan ke Excel (SheetJS) dan PDF (jsPDF). Library dimuat saat dibutuhkan saja.
 import { formatTanggal } from './format'
 
+// Font PDF standar tidak punya beberapa simbol; ganti dengan padanan ASCII
+const teksPdf = (v) =>
+  String(v ?? '')
+    .replace(/≥/g, '>=')
+    .replace(/≤/g, '<=')
+    .replace(/×/g, 'x')
+    .replace(/→/g, '->')
+    .replace(/[✓✔]/g, 'Ya')
+    .replace(/[✗✖]/g, 'Tidak')
+
 const tanggalFile = () => new Date().toISOString().slice(0, 10)
 const aman = (s) => String(s).replace(/[^a-zA-Z0-9-]+/g, '-').replace(/^-|-$/g, '')
 
@@ -30,7 +40,7 @@ export async function unduhPdf(namaFile, judul, bagian, { mendatar = false, subj
   doc.setTextColor(255, 255, 255)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(15)
-  doc.text(judul, 14, 12.5)
+  doc.text(teksPdf(judul), 14, 12.5)
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9.5)
   doc.text(subjudul ?? `Sahabat Kaki Desa - dicetak ${formatTanggal(new Date(), { weekday: undefined })}`, 14, 17.5)
@@ -44,7 +54,7 @@ export async function unduhPdf(namaFile, judul, bagian, { mendatar = false, subj
       doc.setTextColor(156, 36, 87)
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(11.5)
-      doc.text(b.judul, 14, y)
+      doc.text(teksPdf(b.judul), 14, y)
       y += 3
     }
     autoTable(doc, {
@@ -53,15 +63,15 @@ export async function unduhPdf(namaFile, judul, bagian, { mendatar = false, subj
       theme: 'grid',
       styles: { fontSize: 9, cellPadding: 1.6, textColor: [59, 30, 42], lineColor: [230, 200, 212] },
       headStyles: { fillColor: [156, 36, 87], textColor: 255, fontStyle: 'bold' },
-      head: [b.kolom.map((k) => k.label)],
-      body: b.baris.length ? b.baris.map((r) => b.kolom.map((k) => String(r[k.key] ?? ''))) : [[{ content: 'Belum ada data', colSpan: b.kolom.length }]],
+      head: [b.kolom.map((k) => teksPdf(k.label))],
+      body: b.baris.length ? b.baris.map((r) => b.kolom.map((k) => teksPdf(r[k.key]))) : [[{ content: 'Belum ada data', colSpan: b.kolom.length }]],
     })
     y = doc.lastAutoTable.finalY + 4
     if (b.catatan) {
       doc.setTextColor(107, 72, 87)
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(9)
-      const t = doc.splitTextToSize(b.catatan, W - 28)
+      const t = doc.splitTextToSize(teksPdf(b.catatan), W - 28)
       doc.text(t, 14, y + 2)
       y += t.length * 4 + 4
     }
