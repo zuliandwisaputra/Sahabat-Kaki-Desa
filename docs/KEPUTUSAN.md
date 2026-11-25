@@ -49,3 +49,16 @@ ambigu di PRD, disetujui pemilik proyek pada 25 November 2026.
     - `evaluation_notes`: catatan evaluasi dan rencana tindak lanjut per periode (EVA-04).
 12. Instrumen kuesioner (Fase 4) masih menunggu keputusan kelompok. Usulan: WHOQOL-BREF
     (kualitas hidup), MSPSS (dukungan sosial), SDSCA (kemandirian/manajemen diri).
+
+## Desain
+
+13. Dipilih **Opsi B · Rose Lembut**:
+    - Warna: latar `#FFF4F7`, permukaan `#FFFFFF`, rose lembut `#FCE4EB`, utama (berry)
+      `#9C2457` dengan teks putih (kontras 7,5:1), teks `#3B1E2A`, teks sekunder `#6B4857`,
+      garis `#F2D2DD`.
+    - Font Nunito (400/600/700/800), disimpan di dalam proyek (tidak memuat dari Google).
+    - Sudut membulat: kolom isian & tombol 22 px, kartu 28 px.
+    - Teks minimal 16 px, tombol minimal 52 px, cincin fokus terlihat jelas.
+    - Kode warna Kartu Kaki Sehat SELALU memakai ikon + tulisan + bingkai (tidak hanya
+      warna): hijau `#166534/#DCFCE7`, kuning `#854D0E/#FEF9C3`, merah `#991B1B/#FEE2E2`.
+    - Navigasi: bawah (5 tombol) di HP, sidebar di layar ≥ 1024 px.

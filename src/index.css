@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+/* =============================================================================
+   Token desain — Opsi B "Rose Lembut" (docs/KEPUTUSAN.md no. 13)
+   Kelas Tailwind otomatis tersedia, mis. bg-primary, text-muted, rounded-card.
+   ========================================================================== */
+@theme {
+  --font-sans: "Nunito", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+
+  --color-bg: #fff4f7;
+  --color-surface: #ffffff;
+  --color-soft: #fce4eb;
+  --color-ink: #3b1e2a;
+  --color-muted: #6b4857;
+  --color-line: #f2d2dd;
+  --color-primary: #9c2457;
+  --color-primary-hover: #841b48;
+  --color-primary-soft: #f8d2df;
+  --color-danger: #b91c1c;
+  --color-danger-soft: #fee2e2;
+  --color-success: #166534;
+  --color-success-soft: #dcfce7;
+  --color-warning: #854d0e;
+  --color-warning-soft: #fef9c3;
+
+  /* Kode warna Kartu Kaki Sehat (tetap, tidak ikut tema) */
+  --color-hijau: #166534;
+  --color-hijau-bg: #dcfce7;
+  --color-hijau-line: #86efac;
+  --color-kuning: #854d0e;
+  --color-kuning-bg: #fef9c3;
+  --color-kuning-line: #facc15;
+  --color-merah: #991b1b;
+  --color-merah-bg: #fee2e2;
+  --color-merah-line: #f87171;
+
+  --radius-field: 22px;
+  --radius-card: 28px;
+
+  --shadow-card: 0 2px 10px rgb(80 20 45 / 0.06);
+  --shadow-button: 0 6px 16px rgb(156 36 87 / 0.28);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-bg font-sans text-base leading-relaxed text-ink antialiased;
+    min-height: 100dvh;
+  }
+  /* Cincin fokus yang jelas untuk keyboard (aksesibilitas) */
+  :focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 3px;
+    border-radius: 8px;
+  }
+  button,
+  [role="button"],
+  a {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  input,
+  select,
+  textarea {
+    font-size: 18px; /* >= 16 px supaya HP tidak memperbesar layar otomatis */
+  }
+  dialog::backdrop {
+    background: rgb(59 30 42 / 0.45);
+  }
+}
+
+@layer utilities {
+  .bg-hero {
+    background: linear-gradient(160deg, #fbd9e4 0%, #fff4f7 72%);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Hormati pengguna yang memilih "kurangi animasi" */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
