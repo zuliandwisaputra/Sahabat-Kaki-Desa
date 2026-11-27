@@ -463,6 +463,158 @@ select uji.cek('H8 pengguna login tetap bisa membaca view ringkas',
   uji.sebagai('desa', 'select * from public.patient_directory'), 'ok:%');
 
 -- =============================================================================
+-- I. Alur Fase 2 (Pasien, Sahabat Kaki, Kartu Kaki Sehat)
+-- =============================================================================
+insert into uji.data values ('K3', '30000000-0000-0000-0000-000000000003');
+delete from public.notifications;
+select uji.cek('I1 kader menyimpan kartu sebagai draft (belum ada notifikasi)',
+  uji.sebagai('kader', format($q$insert into public.foot_visits (id, patient_id, reported_change, status)
+    values (%L, %L, 'membaik', 'draft')$q$, uji.id('K3'), uji.id('P1'))), 'ok:1');
+select uji.cek('I2 draft tidak mengirim notifikasi ke perawat',
+  (select count(*)::text from public.notifications where recipient_id = uji.id('perawat')), '0');
+select uji.cek('I3 kader mengubah catatan draft',
+  uji.sebagai('kader', format('update public.foot_visits set observation_notes = %L where id = %L', 'luka mengering', uji.id('K3'))), 'ok:1');
+select uji.cek('I4 kader mengirim draft ke perawat',
+  uji.sebagai('kader', format('update public.foot_visits set status = %L where id = %L', 'dikirim', uji.id('K3'))), 'ok:1');
+select uji.cek('I5 perawat menerima notifikasi saat draft dikirim',
+  (select count(*)::text from public.notifications where recipient_id = uji.id('perawat') and link = '/kartu-kaki/' || uji.id('K3')), '1');
+select uji.cek('I6 waktu kirim tercatat',
+  (select (submitted_at is not null)::text from public.foot_visits where id = uji.id('K3')), 'true');
+select uji.sebagai('perawat', format($q$insert into public.assessments (foot_visit_id, color_code, follow_up_instruction)
+  values (%L, 'kuning', 'Kontrol Kamis')$q$, uji.id('K3')));
+select uji.cek('I7 perawat mengubah kode warna -> kader diberi tahu lagi',
+  uji.sebagai('perawat', format('update public.assessments set color_code = %L, follow_up_instruction = %L where foot_visit_id = %L',
+    'hijau', 'Lanjut perawatan', uji.id('K3'))), 'ok:1');
+select uji.cek('I8 kader menerima 2 notifikasi untuk kartu ini (kuning lalu hijau)',
+  (select count(*)::text from public.notifications where recipient_id = uji.id('kader') and link = '/kartu-kaki/' || uji.id('K3')), '2');
+select uji.cek('I9 perawat menonaktifkan pendamping lama',
+  uji.sebagai('perawat', format('update public.companions set active = false, ended_at = current_date where id = %L', uji.id('C1'))), 'ok:1');
+select uji.cek('I10 perawat memasangkan pendamping baru',
+  uji.sebagai('perawat', format($q$insert into public.companions (patient_id, profile_id, name) values (%L, %L, 'Kader Budi')$q$,
+    uji.id('P1'), uji.id('kader2'))), 'ok:1');
+select uji.cek('I11 pendamping lama tidak bisa lagi mencatat kunjungan',
+  uji.sebagai('kader', format($q$insert into public.companion_visits (patient_id, companion_id, activity_type)
+    values (%L, %L, 'telepon')$q$, uji.id('P1'), uji.id('C1'))), 'error:%');
+select uji.cek('I12 riwayat kunjungan pendamping lama tetap ada',
+  (select (count(*) >= 2)::text from public.companion_visits where companion_id = uji.id('C1')), 'true');
+select uji.cek('I13 kader memutus akun keluarga dari data pasien',
+  uji.sebagai('kader', format('select public.link_patient_account(%L, null)', uji.id('pasien'))), 'ok:%');
+select uji.cek('I14 setelah diputus, akun keluarga tidak melihat data pasien',
+  uji.nilai('pasien', 'select count(*) from public.patients'), '0');
+select uji.cek('I15 kader mengubah identitas pasien (Edit di matriks)',
+  uji.sebagai('kader', format('update public.patients set phone = %L where id = %L', '0811', uji.id('P2'))), 'ok:1');
+select uji.cek('I16 perangkat desa tidak bisa mengubah identitas pasien',
+  uji.sebagai('desa', format('update public.patients set phone = %L where id = %L', '0', uji.id('P2'))), 'ok:0');
+
+-- =============================================================================
+-- J. Alur Fase 3 (Pos Kaki, Ojek Sehat, Jimpitan, Pemberdayaan)
+-- =============================================================================
+insert into uji.data values
+  ('RD2', '50000000-0000-0000-0000-000000000002'),
+  ('AT1', '50000000-0000-0000-0000-000000000003');
+select uji.cek('J1 kader mencatat Ny. S di daftar hadir Pos Kaki',
+  uji.sebagai('kader', format($q$insert into public.attendance (id, agenda_id, patient_id) values (%L, %L, %L)$q$, uji.id('AT1'), uji.id('AG1'), uji.id('P1'))), 'ok:1');
+select uji.cek('J2 kader menandai hadir + tepat waktu + kaki diperiksa',
+  uji.sebagai('kader', format('update public.attendance set present = true, on_time = true, foot_check_done = true where id = %L', uji.id('AT1'))), 'ok:1');
+select uji.cek('J3 perangkat desa tidak bisa mengubah daftar hadir',
+  uji.sebagai('desa', format('update public.attendance set present = false where id = %L', uji.id('AT1'))), 'ok:0');
+select uji.cek('J4 perangkat desa melihat status kehadiran',
+  uji.nilai('desa', format('select present::text from public.attendance where id = %L', uji.id('AT1'))), 'true');
+select uji.cek('J5 kader memesan Ojek Sehat kedua',
+  uji.sebagai('kader', format($q$insert into public.rides (id, patient_id, driver_id, pickup_from, destination, scheduled_at, estimated_cost)
+    values (%L, %L, %L, 'Rumah', 'puskesmas', now(), 20000)$q$, uji.id('RD2'), uji.id('P2'), uji.id('DR1'))), 'ok:1');
+select uji.cek('J6 kader menandai pemesanan selesai',
+  uji.sebagai('kader', format('update public.rides set status = %L where id = %L', 'selesai', uji.id('RD2'))), 'ok:1');
+select uji.cek('J7 perangkat desa tidak bisa mengubah status pemesanan',
+  uji.sebagai('desa', format('update public.rides set status = %L where id = %L', 'batal', uji.id('RD2'))), 'ok:0');
+select uji.cek('J8 GERBANG: biaya ride dicatat ke Jimpitan oleh kader',
+  uji.sebagai('kader', format($q$insert into public.funds (trx_type, category, amount, description, ride_id)
+    values ('keluar', 'Ojek Sehat', 20000, 'Ojek Sehat ke Puskesmas', %L)$q$, uji.id('RD2'))), 'ok:1');
+select uji.cek('J9 GERBANG: saldo = 100.000 - 15.000 - 20.000 = 65.000',
+  uji.nilai('desa', $q$select public.dashboard_stats() ->> 'saldo_jimpitan'$q$), '65000');
+select uji.cek('J10 pasien hanya melihat pemesanan miliknya',
+  uji.nilai('pasien', 'select count(*) from public.rides'), '0');
+select uji.cek('J11 kader mencatat pelatihan kader',
+  uji.sebagai('kader', format($q$insert into public.kader_trainings (training_date, title, topics, participant_ids, participant_names)
+    values (current_date, 'Pelatihan KKS', '{pengisian_kks}', array[%L]::uuid[], '{"Bu Sri (PKK)"}')$q$, uji.id('kader'))), 'ok:1');
+select uji.cek('J12 akun yang belum disetujui tidak melihat pelatihan',
+  uji.nilai('baru', 'select count(*) from public.kader_trainings'), '0');
+select uji.cek('J13 perangkat desa mencatat rapat Siaga Kaki',
+  uji.sebagai('desa', $q$insert into public.coordination_meetings (meeting_date, minutes) values (current_date, 'Bahas Ojek Sehat')$q$), 'ok:1');
+select uji.cek('J14 pasien tidak bisa mencatat rapat',
+  uji.sebagai('pasien2', $q$insert into public.coordination_meetings (meeting_date) values (current_date)$q$), 'error:%');
+select uji.cek('J15 perangkat desa menambah sumber daya desa (kebijakan)',
+  uji.sebagai('desa', $q$insert into public.community_resources (resource_type, name, document_url) values ('kebijakan', 'SK Kepala Desa Siaga Kaki', 'https://contoh.id/sk.pdf')$q$), 'ok:1');
+select uji.cek('J16 kader bisa menghapus agenda (Edit di matriks)',
+  uji.sebagai('kader', format('delete from public.agenda where id = %L', uji.id('AG1'))), 'ok:1');
+
+-- =============================================================================
+-- K. Skor luka BWAT menentukan kode warna (migrasi 8)
+-- =============================================================================
+insert into uji.data values
+  ('K10', '60000000-0000-0000-0000-000000000010'),
+  ('K11', '60000000-0000-0000-0000-000000000011'),
+  ('K12', '60000000-0000-0000-0000-000000000012');
+select uji.sebagai('kader', format($q$insert into public.foot_visits (id, patient_id, status) values (%L, %L, 'dikirim'), (%L, %L, 'dikirim'), (%L, %L, 'dikirim')$q$,
+  uji.id('K10'), uji.id('P2'), uji.id('K11'), uji.id('P2'), uji.id('K12'), uji.id('P2')));
+create function uji.bwat(n int) returns text language sql as $$
+  select jsonb_build_object('ukuran', n, 'kedalaman', n, 'tepi', n, 'goa', n, 'jenis_nekrotik', n, 'jumlah_nekrotik', n,
+    'jenis_eksudat', n, 'jumlah_eksudat', n, 'warna_kulit', n, 'edema', n, 'indurasi', n, 'granulasi', n, 'epitelisasi', n)::text;
+$$;
+select uji.cek('K1 skor 39 (13×3) tidak boleh diberi HIJAU',
+  uji.sebagai('perawat', format($q$insert into public.assessments (foot_visit_id, color_code, has_wound, bwat_answers) values (%L, 'hijau', true, %L)$q$, uji.id('K10'), uji.bwat(3))), 'error:%lebih rendah%');
+select uji.cek('K2 skor 39 diberi KUNING sesuai skor',
+  uji.sebagai('perawat', format($q$insert into public.assessments (foot_visit_id, color_code, has_wound, bwat_answers) values (%L, 'kuning', true, %L)$q$, uji.id('K10'), uji.bwat(3))), 'ok:1');
+select uji.cek('K3 skor dihitung otomatis oleh database = 39',
+  (select bwat_score::text || '/' || score_color from public.assessments where foot_visit_id = uji.id('K10')), '39/kuning');
+select uji.cek('K4 skor tidak bisa dipalsukan dari aplikasi',
+  uji.sebagai('perawat', format('update public.assessments set bwat_score = 13 where foot_visit_id = %L', uji.id('K10'))), 'ok:1');
+select uji.cek('K5 skor tetap 39 setelah percobaan dipalsukan',
+  (select bwat_score::text from public.assessments where foot_visit_id = uji.id('K10')), '39');
+select uji.cek('K6 menaikkan ke MERAH tanpa alasan ditolak',
+  uji.sebagai('perawat', format('update public.assessments set color_code = %L where foot_visit_id = %L', 'merah', uji.id('K10'))), 'error:%alasan%');
+select uji.cek('K7 menaikkan ke MERAH dengan alasan klinis diterima',
+  uji.sebagai('perawat', format('update public.assessments set color_code = %L, override_reason = %L where foot_visit_id = %L', 'merah', 'Demam & tanda infeksi sistemik', uji.id('K10'))), 'ok:1');
+select uji.cek('K8 skor 52 (13×4) otomatis MERAH',
+  uji.sebagai('perawat', format($q$insert into public.assessments (foot_visit_id, color_code, has_wound, bwat_answers) values (%L, 'merah', true, %L)$q$, uji.id('K11'), uji.bwat(4))), 'ok:1');
+select uji.cek('K9 butir BWAT tidak lengkap ditolak',
+  uji.sebagai('perawat', format($q$insert into public.assessments (foot_visit_id, color_code, has_wound, bwat_answers) values (%L, 'kuning', true, '{"ukuran":2}')$q$, uji.id('K12'))), 'error:%BWAT%');
+select uji.cek('K10 tanpa luka = HIJAU',
+  uji.sebagai('perawat', format($q$insert into public.assessments (foot_visit_id, color_code, has_wound) values (%L, 'hijau', false)$q$, uji.id('K12'))), 'ok:1');
+select uji.cek('K11 perangkat desa melihat skor di ringkasan kartu (tanpa rincian)',
+  uji.nilai('desa', format('select bwat_score::text from public.foot_card_summary where id = %L', uji.id('K11'))), '52');
+
+-- =============================================================================
+-- L. Evaluasi & rekap kuesioner (migrasi 9) — angka saja, tanpa identitas
+-- =============================================================================
+create function uji.eval(p_akun text, p_jalur text) returns text language plpgsql as $$
+begin
+  return uji.nilai(p_akun, format($q$select (public.evaluation_indicators(current_date - 60, current_date) #>> %L)$q$, p_jalur));
+end $$;
+select uji.cek('L1 perangkat desa bisa membuka evaluasi (angka saja)',
+  uji.sebagai('desa', 'select public.evaluation_indicators(current_date - 30, current_date)'), 'ok:%');
+select uji.cek('L2 akun yang belum disetujui tidak bisa membuka evaluasi',
+  uji.sebagai('baru', 'select public.evaluation_indicators(current_date - 30, current_date)'), 'error:%');
+select uji.cek('L3 pengunjung tanpa login tidak bisa membuka evaluasi',
+  uji.sebagai(null, 'select public.evaluation_indicators(current_date - 30, current_date)'), 'error:%');
+select uji.cek('L4 fungsi bantu daftar pasien tidak bisa dipanggil langsung',
+  uji.sebagai('kader', 'select * from public.eval_pasien(null)'), 'error:%');
+select uji.cek('L5 indikator 2: pasien dengan pendamping dihitung',
+  uji.eval('kader', '{i2,dengan_pendamping}'), '1');
+select uji.cek('L6 indikator 1: kader & pendamping terlatih (1 akun + 1 nama)',
+  uji.eval('desa', '{i1,terlatih}'), '2');
+select uji.cek('L7 indikator 8: rapat Siaga Kaki dihitung',
+  uji.eval('pasien2', '{i8,rapat}'), '1');
+select uji.cek('L8 indikator 9: skor kuesioner awal (rata-rata)',
+  uji.nilai('desa', $q$select x ->> 'awal' from jsonb_array_elements(public.evaluation_indicators(current_date - 60, current_date) -> 'i9') x where x ->> 'aspek' = 'dukungan_sosial'$q$), '4.50');
+select uji.cek('L9 grafik bulanan mengembalikan 6 bulan',
+  uji.sebagai('kader', 'select * from public.evaluation_monthly(6)'), 'ok:6');
+select uji.cek('L10 kader melihat rekap kuesioner tanpa identitas',
+  uji.sebagai('kader', 'select * from public.questionnaire_recap()'), 'ok:1');
+select uji.cek('L11 rekap kuesioner tidak memuat kolom pasien',
+  (select (pg_get_function_result('public.questionnaire_recap()'::regprocedure) like '%patient%')::text), 'false');
+
+-- =============================================================================
 -- Hasil
 -- =============================================================================
 \echo

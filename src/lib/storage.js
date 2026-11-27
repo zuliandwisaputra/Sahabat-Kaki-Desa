@@ -40,3 +40,16 @@ export async function unggahFoto(bucket, folder, file) {
   if (error) throw error
   return path
 }
+
+/** Unggah bukti transaksi Jimpitan (foto dikompres, PDF apa adanya; maks 2 MB). */
+export async function unggahBukti(file) {
+  const bulan = new Date().toISOString().slice(0, 7)
+  if (file.type === 'application/pdf') {
+    if (file.size > 2 * 1024 * 1024) throw new Error('File PDF terlalu besar (maksimal 2 MB).')
+    const path = `${bulan}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.pdf`
+    const { error } = await supabase.storage.from('fund-proofs').upload(path, file, { contentType: 'application/pdf' })
+    if (error) throw error
+    return path
+  }
+  return unggahFoto('fund-proofs', bulan, file)
+}

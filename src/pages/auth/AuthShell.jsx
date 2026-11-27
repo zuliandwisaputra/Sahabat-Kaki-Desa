@@ -10,7 +10,7 @@ export function AuthShell({ title, subtitle, children, footer }) {
         </div>
         <p className="mt-2 text-[17px] text-muted">Bersama merawat kaki warga desa</p>
       </div>
-      <main className="mx-auto w-full max-w-md px-5 pb-12">
+      <main className="animasi-halaman mx-auto w-full max-w-md px-5 pb-12">
         <div className="sm:rounded-card sm:border sm:border-line sm:bg-surface sm:p-7 sm:shadow-card">
           <h1 className="text-2xl font-extrabold">{title}</h1>
           {subtitle && <p className="mt-1 text-muted">{subtitle}</p>}

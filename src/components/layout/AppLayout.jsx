@@ -1,4 +1,4 @@
-import { Suspense, useEffect } from 'react'
+import { Suspense, useEffect, useRef } from 'react'
 import { Link, NavLink, Outlet, useLocation, useMatches } from 'react-router'
 import { LogOut, Menu } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
@@ -15,6 +15,52 @@ function usePageTitle() {
     document.title = title ? `${title} · Sahabat Kaki Desa` : 'Sahabat Kaki Desa'
   }, [title])
   return title ?? 'Sahabat Kaki Desa'
+}
+
+/**
+ * Animasi muncul saat di-scroll: kartu di dalam halaman memudar & naik sedikit
+ * ketika masuk layar. Tidak berjalan jika pengguna memilih "kurangi animasi".
+ */
+function useMunculSaatScroll(ref) {
+  useEffect(() => {
+    const akar = ref.current
+    if (!akar || !('IntersectionObserver' in window)) return
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    const io = new IntersectionObserver(
+      (entri) => {
+        for (const e of entri) {
+          if (e.isIntersecting) {
+            const el = e.target
+            el.classList.add('muncul')
+            io.unobserve(el)
+            // Setelah selesai, bersihkan supaya efek hover kartu kembali normal
+            setTimeout(() => {
+              el.classList.remove('akan-muncul', 'muncul')
+              el.style.transitionDelay = ''
+            }, 800)
+          }
+        }
+      },
+      { rootMargin: '0px 0px -32px 0px', threshold: 0.04 },
+    )
+    const tandai = () => {
+      let urut = 0
+      akar.querySelectorAll('.rounded-card:not([data-muncul])').forEach((el) => {
+        el.dataset.muncul = '1' // hanya dianimasikan sekali
+        if (el.closest('dialog') || el.parentElement?.closest('.akan-muncul')) return
+        el.classList.add('akan-muncul')
+        el.style.transitionDelay = `${Math.min(urut++, 5) * 45}ms`
+        io.observe(el)
+      })
+    }
+    tandai()
+    const mo = new MutationObserver(tandai)
+    mo.observe(akar, { childList: true, subtree: true })
+    return () => {
+      mo.disconnect()
+      io.disconnect()
+    }
+  }, [ref])
 }
 
 function isActive(pathname, path) {
@@ -172,6 +218,13 @@ function StatusAkunBanner() {
 
 export function AppLayout() {
   const title = usePageTitle()
+  const { pathname } = useLocation()
+  const kontenRef = useRef(null)
+  useMunculSaatScroll(kontenRef)
+  // Kembali ke atas saat pindah halaman
+  useEffect(() => {
+    window.scrollTo({ top: 0 })
+  }, [pathname])
   return (
     <div className="min-h-dvh lg:flex">
       <a
@@ -183,11 +236,14 @@ export function AppLayout() {
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar title={title} />
-        <main id="konten" className="mx-auto w-full max-w-5xl flex-1 px-4 pt-5 pb-32 lg:px-8 lg:pt-8 lg:pb-12">
+        <main ref={kontenRef} id="konten" className="mx-auto w-full max-w-5xl flex-1 px-4 pt-5 pb-32 lg:px-8 lg:pt-8 lg:pb-12">
           <StatusAkunBanner />
-          <Suspense fallback={<Spinner />}>
-            <Outlet />
-          </Suspense>
+          {/* key = alamat halaman -> animasi masuk setiap pindah halaman */}
+          <div key={pathname} className="animasi-halaman">
+            <Suspense fallback={<Spinner />}>
+              <Outlet />
+            </Suspense>
+          </div>
         </main>
       </div>
       <BottomNav />

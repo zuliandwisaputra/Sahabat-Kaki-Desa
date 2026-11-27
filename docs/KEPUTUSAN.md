@@ -62,3 +62,30 @@ ambigu di PRD, disetujui pemilik proyek pada 25 November 2026.
     - Kode warna Kartu Kaki Sehat SELALU memakai ikon + tulisan + bingkai (tidak hanya
       warna): hijau `#166534/#DCFCE7`, kuning `#854D0E/#FEF9C3`, merah `#991B1B/#FEE2E2`.
     - Navigasi: bawah (5 tombol) di HP, sidebar di layar ≥ 1024 px.
+
+## Penilaian luka & kuesioner (revisi setelah Fase 3)
+
+14. Kode warna Kartu Kaki Sehat ditentukan dari **skor BWAT** (Bates-Jensen Wound
+    Assessment Tool, 13 butir × 1–5 poin = 13–65) yang diisi perawat:
+    - **13–20 Hijau** — risiko rendah: luka ringan/membaik, lanjut perawatan & kontrol.
+    - **21–40 Kuning** — risiko sedang: perlu arahan perawat dan jadwal pemeriksaan.
+    - **41–65 Merah** — risiko tinggi: luka berat, segera ke tenaga kesehatan/rujukan.
+    - Tidak ada luka terbuka → Hijau.
+    Warna terpilih otomatis dari skor. Perawat boleh **menaikkan** warna dengan alasan
+    klinis (wajib diisi), tetapi tidak boleh menurunkannya. Aturan ini dijaga juga di
+    database (migrasi `20261126000100_skor_bwat.sql`). Kartu lama tanpa skor tetap sah.
+15. Instrumen kuesioner Fase 4: WHOQOL-BREF (kualitas hidup), MSPSS (dukungan sosial),
+    SDSCA (kemandirian/manajemen diri).
+16. Kalimat butir kuesioner di aplikasi adalah versi ringkas berbahasa sederhana untuk
+    prototipe (rumus skor mengikuti instrumen aslinya). Untuk pengambilan data sungguhan,
+    gunakan teks resmi versi Bahasa Indonesia yang dirujuk makalah.
+
+## Teknis (Fase 4)
+
+17. Ekspor Excel memakai SheetJS dari npm (`xlsx@0.18.5`). Peringatan keamanannya hanya
+    berlaku saat **membaca** file Excel dari luar; aplikasi ini hanya **menulis** file,
+    sehingga aman. Jika kelak perlu membaca file Excel, ganti ke paket resmi dari
+    cdn.sheetjs.com.
+18. Data contoh (`supabase/seed.sql`) dan akun roleplay (`npm run akun-demo`) memakai
+    nama fiktif. Username: koordinator (Admin), perawat.cindy, kader.ani,
+    keluarga.s (Pasien/Keluarga, terhubung ke Ny. S), desa.harjo.

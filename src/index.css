@@ -81,8 +81,54 @@
   }
 }
 
+/* =============================================================================
+   Animasi (halus & singkat; mati otomatis jika pengguna memilih "kurangi animasi")
+   ========================================================================== */
+@keyframes masuk-halaman {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes naik-lembar {
+  from { opacity: 0; transform: translateY(32px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes muncul-pop {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+/* Transisi saat pindah halaman */
+.animasi-halaman {
+  animation: masuk-halaman 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+/* Jendela dialog: naik dari bawah (HP) / muncul lembut (laptop) */
+dialog[open] > div {
+  animation: naik-lembar 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@media (min-width: 640px) {
+  dialog[open] > div { animation-name: muncul-pop; }
+}
+dialog[open]::backdrop {
+  animation: masuk-halaman 200ms ease-out both;
+}
+/* Muncul saat di-scroll (ditambahkan oleh AppLayout lewat IntersectionObserver) */
+.akan-muncul {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 450ms ease-out,
+    transform 450ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.akan-muncul.muncul {
+  opacity: 1;
+  transform: none;
+}
+
 /* Hormati pengguna yang memilih "kurangi animasi" */
 @media (prefers-reduced-motion: reduce) {
+  .akan-muncul {
+    opacity: 1 !important;
+    transform: none !important;
+  }
   *,
   *::before,
   *::after {

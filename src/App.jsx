@@ -18,7 +18,20 @@ const Beranda = lazy(() => import('./pages/beranda/Beranda'))
 const Profil = lazy(() => import('./pages/profil/Profil'))
 const KelolaAkun = lazy(() => import('./pages/kelola-akun/KelolaAkun'))
 const Lainnya = lazy(() => import('./pages/umum/Lainnya'))
-const ModulDisiapkan = lazy(() => import('./pages/umum/ModulDisiapkan'))
+const Kuesioner = lazy(() => import('./pages/kuesioner/Kuesioner'))
+const Evaluasi = lazy(() => import('./pages/evaluasi/Evaluasi'))
+const KelolaData = lazy(() => import('./pages/kelola-data/KelolaData'))
+const DaftarPasien = lazy(() => import('./pages/pasien/DaftarPasien'))
+const FormPasien = lazy(() => import('./pages/pasien/FormPasien'))
+const DetailPasien = lazy(() => import('./pages/pasien/DetailPasien'))
+const SahabatKaki = lazy(() => import('./pages/sahabat-kaki/SahabatKaki'))
+const DaftarKartu = lazy(() => import('./pages/kartu-kaki/DaftarKartu'))
+const FormKartu = lazy(() => import('./pages/kartu-kaki/FormKartu'))
+const DetailKartu = lazy(() => import('./pages/kartu-kaki/DetailKartu'))
+const Jimpitan = lazy(() => import('./pages/jimpitan/Jimpitan'))
+const PosKaki = lazy(() => import('./pages/pos-kaki/PosKaki'))
+const AgendaDetail = lazy(() => import('./pages/pos-kaki/AgendaDetail'))
+const Pemberdayaan = lazy(() => import('./pages/pemberdayaan/Pemberdayaan'))
 const NotFound = lazy(() => import('./pages/umum/NotFound'))
 
 function Root() {
@@ -49,13 +62,6 @@ function RouteError() {
   )
 }
 
-// Modul yang dibangun di tahap berikutnya (sementara menampilkan "sedang disiapkan")
-const modul = (key, title) => ({
-  path: `${key}/*`,
-  handle: { title, menu: key },
-  element: <ModulDisiapkan />,
-})
-
 const router = createBrowserRouter([
   {
     element: <Root />,
@@ -85,15 +91,40 @@ const router = createBrowserRouter([
               </RequireMenu>
             ),
           },
-          modul('pasien', 'Pasien'),
-          modul('sahabat-kaki', 'Sahabat Kaki'),
-          modul('kartu-kaki', 'Kartu Kaki Sehat'),
-          modul('jimpitan', 'Jimpitan Sehat'),
-          modul('pos-kaki', 'Pos Kaki & Ojek Sehat'),
-          modul('pemberdayaan', 'Pemberdayaan Desa'),
-          modul('kuesioner', 'Kuesioner'),
-          modul('evaluasi', 'Evaluasi'),
-          modul('kelola-data', 'Kelola Data'),
+          {
+            path: 'pasien',
+            handle: { title: 'Pasien', menu: 'pasien' },
+            children: [
+              { index: true, element: <DaftarPasien /> },
+              { path: 'baru', handle: { title: 'Tambah pasien' }, element: <FormPasien key="baru" /> },
+              { path: ':id', handle: { title: 'Detail pasien' }, element: <DetailPasien /> },
+              { path: ':id/ubah', handle: { title: 'Ubah data pasien' }, element: <FormPasien key="ubah" /> },
+            ],
+          },
+          { path: 'sahabat-kaki', handle: { title: 'Sahabat Kaki', menu: 'sahabat-kaki' }, element: <SahabatKaki /> },
+          {
+            path: 'kartu-kaki',
+            handle: { title: 'Kartu Kaki Sehat', menu: 'kartu-kaki' },
+            children: [
+              { index: true, element: <DaftarKartu /> },
+              { path: 'baru', handle: { title: 'Isi Kartu Kaki' }, element: <FormKartu key="baru" /> },
+              { path: ':id', handle: { title: 'Kartu Kaki Sehat' }, element: <DetailKartu /> },
+              { path: ':id/ubah', handle: { title: 'Ubah catatan kartu' }, element: <FormKartu key="ubah" /> },
+            ],
+          },
+          { path: 'jimpitan', handle: { title: 'Jimpitan Sehat', menu: 'jimpitan' }, element: <Jimpitan /> },
+          {
+            path: 'pos-kaki',
+            handle: { title: 'Pos Kaki & Ojek Sehat', menu: 'pos-kaki' },
+            children: [
+              { index: true, element: <PosKaki /> },
+              { path: 'agenda/:id', handle: { title: 'Agenda Pos Kaki' }, element: <AgendaDetail /> },
+            ],
+          },
+          { path: 'pemberdayaan', handle: { title: 'Pemberdayaan Desa', menu: 'pemberdayaan' }, element: <Pemberdayaan /> },
+          { path: 'kuesioner', handle: { title: 'Kuesioner', menu: 'kuesioner' }, element: <Kuesioner /> },
+          { path: 'evaluasi', handle: { title: 'Evaluasi', menu: 'evaluasi' }, element: <Evaluasi /> },
+          { path: 'kelola-data', handle: { title: 'Kelola Data', menu: 'kelola-data' }, element: <KelolaData /> },
           { path: '*', handle: { title: 'Tidak ditemukan' }, element: <NotFound /> },
         ],
       },

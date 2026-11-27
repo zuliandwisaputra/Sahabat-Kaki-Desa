@@ -15,7 +15,7 @@ const SIZES = {
 
 export function buttonClass({ variant = 'primary', size = 'md', block = false, className = '' } = {}) {
   return [
-    'inline-flex items-center justify-center rounded-field font-bold transition-colors duration-150',
+    'inline-flex items-center justify-center rounded-field font-bold transition-[background-color,color,transform] duration-150 active:scale-[0.97] disabled:active:scale-100',
     'disabled:cursor-not-allowed disabled:opacity-60',
     VARIANTS[variant],
     SIZES[size],
