@@ -1,17 +1,89 @@
 # Sahabat Kaki Desa
 
-Website kolaborasi perawatan kaki pasien di tingkat desa untuk Perawat Puskesmas, Kader,
-Pasien/Keluarga, Perangkat Desa, dan Admin. Website ini dibuka lewat browser (Chrome) di
-HP maupun laptop, jadi tidak perlu dipasang dari Play Store. Tampilannya dirancang
-mobile-first, sehingga terasa seperti aplikasi saat dibuka di HP.
+![Sahabat Kaki Desa di laptop dan HP](docs/media/portofolio.jpg)
+
+**Website kolaborasi perawatan kaki untuk pasien diabetes melitus dengan luka kaki.**
+Satu tempat bagi pasien, keluarga, kader, perawat Puskesmas, dan perangkat desa untuk
+memantau dan menindaklanjuti kondisi kaki pasien.
+
+**Coba langsung:** [sahabat-kaki-desa.netlify.app](https://sahabat-kaki-desa.netlify.app)
+
+## Tentang proyek
+
+Website ini saya bangun untuk mahasiswa Program Studi Sarjana Keperawatan, Fakultas Ilmu
+Kesehatan, Universitas Brawijaya (Kelompok 2, mata kuliah Keperawatan Kronis). Website ini
+adalah prototipe dari inovasi dalam makalah mereka, *Pengembangan Inovasi Keperawatan
+Komunitas Berbasis Community Resources and Policies untuk Meningkatkan Dukungan Sosial dan
+Kemandirian Pasien Diabetes Melitus dengan Luka Kaki*, dan dipakai untuk presentasi serta
+roleplay di kelas.
+
+Program di makalah punya tiga komponen: **Sahabat Kaki** (pendamping tetangga), **Kartu Kaki
+Sehat** (kode warna hijau, kuning, merah), serta **Jimpitan Sehat dan Pos Kaki** (iuran
+gotong royong untuk transportasi dan pemeriksaan kaki). Sebelumnya semua itu berjalan lewat
+kertas dan grup WhatsApp. Website ini menyatukannya menjadi satu riwayat pasien yang bisa
+dilanjutkan oleh siapa pun yang berwenang, dari HP atau laptop mana pun.
+
+Kasus acuannya adalah Ny. S, 59 tahun, diabetes tipe 2 selama 12 tahun dengan luka kaki
+3 bulan. Semua data di website adalah data contoh fiktif.
+
+## Fitur utama
+
+| Peran | Yang bisa dilakukan |
+| --- | --- |
+| Kader | Mendampingi pasien, mencatat kunjungan, mengisi Kartu Kaki Sehat, melapor ke perawat, memesan Ojek Sehat |
+| Perawat Puskesmas | Menilai luka dengan skor BWAT, menulis SBAR dan arahan, merujuk, mengisi kuesioner, melihat evaluasi |
+| Pasien / Keluarga | Melihat kondisi kaki dan arahan perawat, mencetak kartu, ikut kegiatan desa |
+| Perangkat Desa | Mengelola Jimpitan Sehat dan sumber daya desa, memantau ringkasan tanpa melihat data medis |
+| Admin | Menyetujui akun baru dan menjaga data program tetap rapi |
+
+- **Kode warna terukur.** Skor Bates-Jensen Wound Assessment Tool (13 butir) menentukan warna
+  otomatis: 13–20 hijau, 21–40 kuning, 41–65 merah. Perawat boleh menaikkan warna, tidak
+  bisa menurunkannya.
+- **Notifikasi langsung.** Laporan kader muncul di lonceng perawat, dan arahan perawat kembali
+  ke kader tanpa perlu dimuat ulang.
+- **Kartu Kaki Sehat cetak.** PDF satu halaman berisi riwayat, kode warna, dan kolom paraf
+  kader serta perawat.
+- **Ojek Sehat terhubung ke Jimpitan.** Biaya perjalanan tercatat sebagai pengeluaran dana
+  warga, lengkap dengan laporan bulanan.
+- **Evaluasi 9 indikator.** Delapan indikator dihitung otomatis dari data; indikator
+  kesembilan memakai kuesioner WHOQOL-BREF, MSPSS, dan SDSCA. Bisa diunduh sebagai Excel
+  atau PDF.
+- **Ramah pengguna lansia.** Mobile-first dari lebar 360 px, teks minimal 16 px, dan
+  animasi yang otomatis mati bila perangkat meminta "kurangi gerakan".
+
+## Dibangun dengan apa?
+
+Sahabat Kaki Desa **bukan aplikasi native** (bukan aplikasi Android atau iOS yang diunduh
+dari Play Store). Ini adalah **aplikasi web** yang dibangun dengan framework JavaScript
+modern dan dibuka lewat browser. Karena tampilannya mobile-first, rasanya seperti aplikasi
+saat dibuka di HP.
+
+| Bagian | Teknologi | Fungsinya |
+| --- | --- | --- |
+| Antarmuka | [React 19](https://react.dev) (JavaScript) | Menyusun tampilan dari komponen yang bisa dipakai ulang |
+| Build tool | [Vite 8](https://vite.dev) | Server pengembangan cepat dan build produksi |
+| Tampilan | [Tailwind CSS 4](https://tailwindcss.com) | Gaya dan tema warna "Rose Lembut" |
+| Navigasi | [React Router 8](https://reactrouter.com) | Perpindahan halaman tanpa memuat ulang |
+| Backend | [Supabase](https://supabase.com) | Login, database PostgreSQL dengan Row Level Security, penyimpanan foto privat, dan notifikasi realtime |
+| Grafik | [Chart.js](https://www.chartjs.org) | Grafik di halaman Evaluasi |
+| Ekspor | [SheetJS](https://sheetjs.com) dan [jsPDF](https://github.com/parallax/jsPDF) | Laporan Excel dan PDF, serta Kartu Kaki Sehat cetak |
+| Hosting | [Netlify](https://www.netlify.com) | Website publik dengan HTTPS |
+
+Aturan siapa boleh melihat dan mengubah data dijaga langsung di database (Row Level
+Security), bukan hanya disembunyikan di tampilan. Aturan itu disusun dalam 9 file migrasi
+SQL dan diuji dengan 193 skenario hak akses.
+
+## Dokumen proyek
 
 - Kebutuhan produk: [`docs/PRD.md`](docs/PRD.md)
 - Keputusan tambahan (hal yang ambigu di PRD, pilihan desain): [`docs/KEPUTUSAN.md`](docs/KEPUTUSAN.md)
 
-**Teknologi:** React + Vite + Tailwind CSS + React Router, Supabase (Auth, PostgreSQL +
-Row Level Security, Storage privat, Realtime), dan Netlify untuk hosting.
-
 ---
+
+# Panduan menjalankan dan mengembangkan
+
+Bagian di bawah ini untuk yang ingin menjalankan website di laptop sendiri atau
+memasangnya ulang.
 
 ## A. Persiapan di laptop Windows (sekali saja)
 
